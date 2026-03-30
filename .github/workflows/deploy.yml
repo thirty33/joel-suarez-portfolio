@@ -142,10 +142,16 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy to S3
+        env:
+          S3_BUCKET: ${{ secrets.AWS_S3_SITE_BUCKET_NAME }}
+        if: env.S3_BUCKET != ''
         run: |
           aws s3 sync dist/ s3://${{ secrets.AWS_S3_SITE_BUCKET_NAME }} --delete
 
       - name: Invalidate CloudFront cache
+        env:
+          CF_DISTRIBUTION_ID: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
+        if: env.CF_DISTRIBUTION_ID != ''
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} \
