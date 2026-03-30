@@ -21,19 +21,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check if infrastructure changed
-        id: check_infra
-        run: |
-          if git diff HEAD~1 --name-only 2>/dev/null | grep -q 'infrastructure/cloudformation.yml'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Configure AWS credentials
-        if: steps.check_infra.outputs.changed == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -41,7 +29,6 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Check stack status
-        if: steps.check_infra.outputs.changed == 'true'
         id: stack_status
         run: |
           STATUS=$(aws cloudformation describe-stacks \
@@ -49,6 +36,19 @@ jobs:
             --query "Stacks[0].StackStatus" \
             --output text 2>/dev/null || echo "DOES_NOT_EXIST")
           echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+      - name: Check if infrastructure changed
+        id: check_infra
+        run: |
+          if [ "${{ steps.stack_status.outputs.status }}" = "DOES_NOT_EXIST" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif git diff HEAD~1 --name-only 2>/dev/null | grep -q 'infrastructure/cloudformation.yml'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create stack (first run only)
         if: steps.check_infra.outputs.changed == 'true' && steps.stack_status.outputs.status == 'DOES_NOT_EXIST'
@@ -71,7 +71,7 @@ jobs:
           echo "Stack created successfully"
 
       - name: Update stack
-        if: steps.check_infra.outputs.changed == 'true' && steps.stack_status.outputs.status != 'DOES_NOT_EXIST'
+        if: steps.check_infra.outputs.changed == 'true' && steps.stack_status.outputs.status != 'DOES_NOT_EXIST' && steps.stack_status.outputs.status != 'CREATE_IN_PROGRESS'
         run: |
           aws cloudformation update-stack \
             --stack-name ${{ env.STACK_NAME }} \
