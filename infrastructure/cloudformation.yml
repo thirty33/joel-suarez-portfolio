@@ -1,0 +1,430 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Infraestructura para joel-suarez-portfolio: 2 S3 buckets (site + assets),
+  distribución CloudFront con signed URLs para assets, IAM user de deploy.
+  Sin dominio — acceso vía URL de CloudFront.
+
+# ==============================================================================
+# PARAMETERS
+# ==============================================================================
+Parameters:
+  SiteBucketName:
+    Type: String
+    Description: Nombre del bucket S3 para el sitio (debe ser único globalmente)
+
+  AssetsBucketName:
+    Type: String
+    Description: Nombre del bucket S3 para assets (debe ser único globalmente)
+
+  Environment:
+    Type: String
+    Description: Ambiente de despliegue
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+  DeployUserName:
+    Type: String
+    Description: Nombre del usuario IAM de deploy
+
+  AssetsPublicKeyEncoded:
+    Type: String
+    Description: Clave pública RSA (PEM) para firmar URLs de assets
+
+# ==============================================================================
+# RESOURCES
+# ==============================================================================
+Resources:
+
+  # ----------------------------------------------------------------------------
+  # S3 BUCKET - Sitio estático (dist/)
+  # ----------------------------------------------------------------------------
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref SiteBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: joel-suarez-portfolio
+
+  # ----------------------------------------------------------------------------
+  # S3 BUCKET POLICY - Sitio: CloudFront OAC + IAM user
+  # ----------------------------------------------------------------------------
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipal
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${SiteBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+          - Sid: AllowDeployUserAccess
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt DeployUser.Arn
+            Action:
+              - s3:ListBucket
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+            Resource:
+              - !GetAtt SiteBucket.Arn
+              - !Sub '${SiteBucket.Arn}/*'
+
+  # ----------------------------------------------------------------------------
+  # S3 BUCKET - Assets (imágenes, fuentes, SVGs)
+  # ----------------------------------------------------------------------------
+  AssetsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref AssetsBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: joel-suarez-portfolio
+
+  # ----------------------------------------------------------------------------
+  # S3 BUCKET POLICY - Assets: Deny directo + CloudFront OAC + IAM user
+  # ----------------------------------------------------------------------------
+  AssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AssetsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: DenyDirectPublicAccess
+            Effect: Deny
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub '${AssetsBucket.Arn}/*'
+            Condition:
+              StringNotLike:
+                aws:UserAgent: 'Amazon CloudFront'
+              StringNotEquals:
+                aws:PrincipalArn: !GetAtt DeployUser.Arn
+          - Sid: AllowCloudFrontServicePrincipal
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${AssetsBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+          - Sid: AllowDeployUserAccess
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt DeployUser.Arn
+            Action:
+              - s3:ListBucket
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+            Resource:
+              - !GetAtt AssetsBucket.Arn
+              - !Sub '${AssetsBucket.Arn}/*'
+
+  # ----------------------------------------------------------------------------
+  # CLOUDFRONT ORIGIN ACCESS CONTROL (OAC)
+  # ----------------------------------------------------------------------------
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub '${SiteBucketName}-oac'
+        Description: !Sub 'OAC for ${SiteBucketName} and ${AssetsBucketName}'
+        SigningProtocol: sigv4
+        SigningBehavior: always
+        OriginAccessControlOriginType: s3
+
+  # ----------------------------------------------------------------------------
+  # CLOUDFRONT FUNCTION - URL Rewrite para resolver index.html
+  # ----------------------------------------------------------------------------
+  URLRewriteFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub '${SiteBucketName}-url-rewrite'
+      AutoPublish: true
+      FunctionConfig:
+        Comment: 'Rewrite directory URLs to append index.html for static site routing'
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri;
+          if (uri.endsWith('/')) {
+            request.uri += 'index.html';
+          } else if (!uri.includes('.')) {
+            request.uri += '/index.html';
+          }
+          return request;
+        }
+
+  # ----------------------------------------------------------------------------
+  # CLOUDFRONT - Public Key y Key Group para signed URLs de assets
+  # ----------------------------------------------------------------------------
+  AssetsPublicKey:
+    Type: AWS::CloudFront::PublicKey
+    Properties:
+      PublicKeyConfig:
+        Name: !Sub '${AssetsBucketName}-public-key'
+        Comment: 'Public key for signed URLs on assets bucket'
+        EncodedKey: !Ref AssetsPublicKeyEncoded
+        CallerReference: !Sub '${AssetsBucketName}-key-ref'
+
+  AssetsKeyGroup:
+    Type: AWS::CloudFront::KeyGroup
+    Properties:
+      KeyGroupConfig:
+        Name: !Sub '${AssetsBucketName}-key-group'
+        Comment: 'Key group for signed URLs on assets'
+        Items:
+          - !Ref AssetsPublicKey
+
+  # ----------------------------------------------------------------------------
+  # CLOUDFRONT - Response Headers Policy (cache-control para assets)
+  # ----------------------------------------------------------------------------
+  AssetsCacheHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub '${AssetsBucketName}-cache-control'
+        Comment: 'Long-lived cache for static assets'
+        CustomHeadersConfig:
+          Items:
+            - Header: cache-control
+              Value: 'public, max-age=63072000'
+              Override: true
+
+  # ----------------------------------------------------------------------------
+  # CLOUDFRONT DISTRIBUTION - 2 origins (site + assets)
+  # ----------------------------------------------------------------------------
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub 'joel-suarez-portfolio (${Environment})'
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_All
+
+        # Sin dominio por ahora — certificado default de CloudFront
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+        # Origins
+        Origins:
+          - Id: SiteBucketOrigin
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !Ref CloudFrontOAC
+          - Id: AssetsBucketOrigin
+            DomainName: !GetAtt AssetsBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !Ref CloudFrontOAC
+
+        # Default Cache Behavior — Site
+        DefaultCacheBehavior:
+          TargetOriginId: SiteBucketOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt URLRewriteFunction.FunctionARN
+
+        # Cache Behaviors — Assets (signed URLs)
+        CacheBehaviors:
+          - PathPattern: 'assets/*'
+            TargetOriginId: AssetsBucketOrigin
+            ViewerProtocolPolicy: https-only
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+            ResponseHeadersPolicyId: !Ref AssetsCacheHeadersPolicy
+            TrustedKeyGroups:
+              - !Ref AssetsKeyGroup
+
+        # Custom Error Responses
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 0
+
+        Restrictions:
+          GeoRestriction:
+            RestrictionType: none
+
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: joel-suarez-portfolio
+
+  # ----------------------------------------------------------------------------
+  # IAM USER - Deploy
+  # ----------------------------------------------------------------------------
+  DeployUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref DeployUserName
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: joel-suarez-portfolio
+
+  DeployUserPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${DeployUserName}-policy'
+      Description: !Sub 'Permisos de deploy para ${DeployUserName}'
+      Users:
+        - !Ref DeployUser
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: S3SiteBucket
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetObject
+            Resource:
+              - !GetAtt SiteBucket.Arn
+              - !Sub '${SiteBucket.Arn}/*'
+          - Sid: S3AssetsBucket
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetObject
+            Resource:
+              - !GetAtt AssetsBucket.Arn
+              - !Sub '${AssetsBucket.Arn}/*'
+          - Sid: CloudFrontInvalidation
+            Effect: Allow
+            Action:
+              - cloudfront:CreateInvalidation
+              - cloudfront:GetDistribution
+            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+          - Sid: CloudFormationManagement
+            Effect: Allow
+            Action:
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:CreateChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:UpdateStack
+            Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*'
+
+  DeployUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref DeployUser
+
+# ==============================================================================
+# OUTPUTS
+# ==============================================================================
+Outputs:
+  SiteBucketName:
+    Description: Nombre del bucket del sitio
+    Value: !Ref SiteBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-SiteBucketName'
+
+  AssetsBucketName:
+    Description: Nombre del bucket de assets
+    Value: !Ref AssetsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-AssetsBucketName'
+
+  DistributionId:
+    Description: ID de la distribución CloudFront
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-DistributionId'
+
+  DistributionURL:
+    Description: URL del sitio (CloudFront)
+    Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
+
+  DeployUserAccessKeyId:
+    Description: Access Key ID del usuario de deploy
+    Value: !Ref DeployUserAccessKey
+
+  DeployUserSecretAccessKey:
+    Description: Secret Access Key del usuario de deploy (guardar de forma segura)
+    Value: !GetAtt DeployUserAccessKey.SecretAccessKey
+
+  AssetsKeyGroupId:
+    Description: ID del Key Group para signed URLs
+    Value: !Ref AssetsKeyGroup
+
+  AssetsPublicKeyId:
+    Description: ID de la Public Key en CloudFront
+    Value: !Ref AssetsPublicKey

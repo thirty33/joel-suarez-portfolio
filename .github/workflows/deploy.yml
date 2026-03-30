@@ -1,0 +1,152 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  STACK_NAME: 'joel-portfolio-prod'
+
+jobs:
+  infrastructure:
+    name: Update Infrastructure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if infrastructure changed
+        id: check_infra
+        run: |
+          if git diff HEAD~1 --name-only 2>/dev/null | grep -q 'infrastructure/cloudformation.yml'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        if: steps.check_infra.outputs.changed == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Check stack status
+        if: steps.check_infra.outputs.changed == 'true'
+        id: stack_status
+        run: |
+          STATUS=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.STACK_NAME }} \
+            --query "Stacks[0].StackStatus" \
+            --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+
+      - name: Create stack (first run only)
+        if: steps.check_infra.outputs.changed == 'true' && steps.stack_status.outputs.status == 'DOES_NOT_EXIST'
+        run: |
+          aws cloudformation create-stack \
+            --stack-name ${{ env.STACK_NAME }} \
+            --template-body file://infrastructure/cloudformation.yml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameters \
+              ParameterKey=SiteBucketName,ParameterValue=${{ secrets.AWS_S3_SITE_BUCKET_NAME }} \
+              ParameterKey=AssetsBucketName,ParameterValue=${{ secrets.AWS_S3_ASSETS_BUCKET_NAME }} \
+              ParameterKey=Environment,ParameterValue=${{ secrets.AWS_ENVIRONMENT }} \
+              ParameterKey=DeployUserName,ParameterValue=${{ secrets.AWS_DEPLOY_USER_NAME }} \
+              ParameterKey=AssetsPublicKeyEncoded,ParameterValue="${{ secrets.ASSETS_PUBLIC_KEY_PEM }}"
+
+          echo "Waiting for stack creation..."
+          aws cloudformation wait stack-create-complete \
+            --stack-name ${{ env.STACK_NAME }}
+
+          echo "Stack created successfully"
+
+      - name: Update stack
+        if: steps.check_infra.outputs.changed == 'true' && steps.stack_status.outputs.status != 'DOES_NOT_EXIST'
+        run: |
+          aws cloudformation update-stack \
+            --stack-name ${{ env.STACK_NAME }} \
+            --template-body file://infrastructure/cloudformation.yml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameters \
+              ParameterKey=SiteBucketName,UsePreviousValue=true \
+              ParameterKey=AssetsBucketName,UsePreviousValue=true \
+              ParameterKey=Environment,UsePreviousValue=true \
+              ParameterKey=DeployUserName,UsePreviousValue=true \
+              ParameterKey=AssetsPublicKeyEncoded,UsePreviousValue=true \
+          && aws cloudformation wait stack-update-complete \
+            --stack-name ${{ env.STACK_NAME }} \
+          && echo "Stack updated successfully" \
+          || echo "No updates to perform or update failed - check stack events"
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env file
+        run: |
+          cat << EOF > .env
+          PUBLIC_SITE_NAME=${{ secrets.PUBLIC_SITE_NAME }}
+          PUBLIC_SITE_TITLE=${{ secrets.PUBLIC_SITE_TITLE }}
+          PUBLIC_CONTACT_EMAIL=${{ secrets.PUBLIC_CONTACT_EMAIL }}
+          PUBLIC_WEBSITE_URL=${{ secrets.PUBLIC_WEBSITE_URL }}
+          EOF
+
+      - name: Build project
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  deploy:
+    name: Deploy to S3
+    needs: [infrastructure, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.AWS_S3_SITE_BUCKET_NAME }} --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
