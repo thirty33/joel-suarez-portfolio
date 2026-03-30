@@ -37,10 +37,19 @@ jobs:
             --output text 2>/dev/null || echo "DOES_NOT_EXIST")
           echo "status=$STATUS" >> $GITHUB_OUTPUT
 
+      - name: Delete failed stack if ROLLBACK_COMPLETE
+        if: steps.stack_status.outputs.status == 'ROLLBACK_COMPLETE'
+        run: |
+          echo "Stack in ROLLBACK_COMPLETE state, deleting..."
+          aws cloudformation delete-stack --stack-name ${{ env.STACK_NAME }}
+          aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }}
+          echo "Stack deleted"
+
       - name: Check if infrastructure changed
         id: check_infra
         run: |
-          if [ "${{ steps.stack_status.outputs.status }}" = "DOES_NOT_EXIST" ]; then
+          STATUS="${{ steps.stack_status.outputs.status }}"
+          if [ "$STATUS" = "DOES_NOT_EXIST" ] || [ "$STATUS" = "ROLLBACK_COMPLETE" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           elif git diff HEAD~1 --name-only 2>/dev/null | grep -q 'infrastructure/cloudformation.yml'; then
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -51,7 +60,7 @@ jobs:
           fi
 
       - name: Create stack (first run only)
-        if: steps.check_infra.outputs.changed == 'true' && steps.stack_status.outputs.status == 'DOES_NOT_EXIST'
+        if: steps.check_infra.outputs.changed == 'true' && (steps.stack_status.outputs.status == 'DOES_NOT_EXIST' || steps.stack_status.outputs.status == 'ROLLBACK_COMPLETE')
         run: |
           aws cloudformation create-stack \
             --stack-name ${{ env.STACK_NAME }} \
