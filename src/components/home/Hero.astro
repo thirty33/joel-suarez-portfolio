@@ -1,0 +1,158 @@
+---
+import Icon from "../Icon.astro";
+import { CONTACT, HELLO_MESSAGE, ROTATING_VERBS, whatsappLink } from "../../data/home";
+
+const hello = whatsappLink(HELLO_MESSAGE);
+---
+
+<section
+	id="inicio"
+	class="hero relative isolate overflow-hidden shell grid-rows-[minmax(40svh,1fr)_auto_3rem] lg:grid-rows-[minmax(6.5rem,1fr)_auto_minmax(4.5rem,1fr)]"
+	aria-labelledby="hero-title"
+	data-motion
+	data-spotlight
+	data-theme="dark"
+>
+	<!-- Background: Joel in his studio, with the ink of the brand washing in from the left (his portrait on phones) -->
+	<div class="hero__photo absolute inset-x-0 top-0 -z-30 h-[55svh] lg:inset-0 lg:h-auto" aria-hidden="true">
+		<picture class="block h-full w-full">
+			<source media="(max-width: 1023.98px)" srcset="/images/joel/portrait-480.webp 480w, /images/joel/portrait.webp 1100w" sizes="100vw" />
+			<img
+				src="/images/joel/workspace.webp"
+				srcset="/images/joel/workspace-1200.webp 1200w, /images/joel/workspace.webp 2400w"
+				sizes="100vw"
+				width="2400"
+				height="1515"
+				alt=""
+				class="h-full w-full object-cover"
+				fetchpriority="high"
+				decoding="async"
+			/>
+		</picture>
+		<div class="hero__shade"></div>
+	</div>
+	<div class="spotlight -z-20" aria-hidden="true"></div>
+	<div class="hero__glow -left-[22rem] -top-[16rem] -z-20 h-[48rem] w-[48rem]" aria-hidden="true"></div>
+	<p class="hero__ghost ghost -z-10" aria-hidden="true" data-ghost>Joel Suárez</p>
+
+	<!-- Words -->
+	<div class="col-start-2 row-start-2 grid grid-cols-[minmax(0,40rem)] grid-rows-[auto_1.1rem_auto_1.1rem_auto_1.5rem_auto_2rem_auto] lg:grid-rows-[auto_min(1.75rem,3svh)_auto_min(1.75rem,3svh)_auto_min(2.5rem,4.5svh)_auto_min(3rem,5.5svh)_auto]">
+		<p class="enter chip chip-ic row-start-1 bg-white/10 text-white/90 ring-1 ring-white/15 backdrop-blur" style="--e:.05s">
+			<span class="pulse-dot"></span>
+			<span>Disponible para nuevos proyectos</span>
+		</p>
+
+		<h1 id="hero-title" class="display row-start-3 text-[3.3rem] leading-[0.94] sm:text-[4.6rem] lg:text-[min(5.7rem,12.5svh)] xl:text-[min(6.4rem,13svh)]" aria-label="Software que trabaja por ti">
+			<span class="enter block" style="--e:.15s" aria-hidden="true">Software que</span>
+			<span class="enter block" style="--e:.3s" aria-hidden="true">
+				<span class="rotator" data-rotator>
+					{ROTATING_VERBS.map((verb, index) => <span class:list={["rotator__word", index === 0 && "is-active"]}>{verb}</span>)}
+				</span>
+			</span>
+			<span class="enter block" style="--e:.45s" aria-hidden="true">por ti<span class="text-lemon">.</span></span>
+		</h1>
+
+		<p class="enter row-start-5 max-w-[35rem] text-[1.02rem] leading-relaxed text-white/80 text-pretty lg:text-[1.14rem]" style="--e:.6s">
+			Soy <strong class="font-bold text-white">Joel Suárez</strong>, arquitecto de software. Primero escucho cómo trabaja tu negocio y qué quieres
+			construir; después te acompaño en cada etapa hasta que el software queda tal cual lo necesitas: agentes de IA, pagos en línea, integraciones
+			con tu ERP y tiendas que venden.
+		</p>
+
+		<div class="enter row-start-7 grid grid-rows-[auto_0.75rem_auto] justify-items-start sm:grid-cols-[auto_0.9rem_auto] sm:grid-rows-1" style="--e:.75s">
+			<a class="btn btn--lemon btn-ic col-start-1 row-start-1" href={hello} target="_blank" rel="noopener" data-magnetic>
+				<span class="ico" style="--ico:url(/icons/whatsapp.svg); --ico-size:1.2rem"></span>
+				<span>Hablemos por WhatsApp</span>
+			</a>
+			<a class="btn btn--line btn-ic col-start-1 row-start-3 sm:col-start-3 sm:row-start-1" href="#casos" data-magnetic>
+				<span>Ver casos reales</span>
+				<Icon name="arrow-down" size={18} stroke={2.4} />
+			</a>
+		</div>
+
+		<div class="enter row-start-9 grid grid-cols-[auto_0.9rem_auto] items-center justify-start" style="--e:.9s">
+			<img src="/images/joel/portrait-480.webp" width="480" height="480" alt="Joel Suárez" class="col-start-1 h-12 w-12 rounded-full object-cover object-[50%_25%] ring-2 ring-lemon" />
+			<div class="col-start-3 grid grid-rows-[auto_0.2rem_auto]">
+				<p class="row-start-1 text-[0.95rem] font-bold">{CONTACT.city} · trabajo remoto</p>
+				<p class="row-start-3 text-[0.82rem] text-white/60">Proyectos en Chile, Colombia, EE. UU., Francia y el resto del mundo</p>
+			</div>
+		</div>
+	</div>
+
+	<!-- What Joel builds, floating around him (desktop) -->
+	<div class="pointer-events-none absolute inset-0 hidden xl:block" aria-hidden="true">
+		<!-- WhatsApp message understood by the AI -->
+		<div class="absolute left-[53%] top-[16%]" data-parallax="18">
+			<div class="hero-card" style="--in:1.1s">
+				<div class="glass float grid w-[17.5rem] grid-cols-[0.9rem_auto_0.65rem_1fr_0.9rem] grid-rows-[0.85rem_auto_0.75rem_auto_0.7rem_auto_0.9rem]" style="--float-duration:6.5s">
+					<span class="col-start-2 row-start-2 grid h-9 w-9 place-items-center rounded-full bg-[#25d366] text-white">
+						<span class="ico" style="--ico:url(/icons/whatsapp.svg); --ico-size:1.1rem"></span>
+					</span>
+					<span class="col-start-4 row-start-2 grid content-center grid-rows-[auto_0.15rem_auto]">
+						<span class="row-start-1 text-[0.8rem] font-bold">Constructora Andes</span>
+						<span class="row-start-3 text-[0.68rem] text-slate">WhatsApp · ahora</span>
+					</span>
+					<p class="bubble bubble--in col-span-3 col-start-2 row-start-4 max-w-none bg-[#f0f2f5] text-[0.78rem] shadow-none">Hola 👋 necesito 20 almuerzos para el viernes en la sucursal Providencia</p>
+					<p class="chip chip-ic col-span-3 col-start-2 row-start-6 bg-ink text-lemon">
+						<Icon name="sparkle" size={14} />
+						<span>IA: pedido · Providencia · viernes</span>
+					</p>
+				</div>
+			</div>
+		</div>
+
+		<!-- Payment approved -->
+		<div class="absolute left-[46.5%] top-[49%]" data-parallax="26">
+			<div class="hero-card" style="--in:1.4s">
+				<div class="glass glass--dark float grid w-[15rem] grid-cols-[0.9rem_auto_0.75rem_1fr_0.9rem] grid-rows-[0.9rem_auto_0.8rem_auto_0.9rem]" style="--float-duration:7.5s; --float-delay:-2s">
+					<span class="col-start-2 row-start-2 grid h-10 w-10 place-items-center rounded-full bg-mint/15 text-mint">
+						<Icon name="check-circle" size={22} stroke={2.2} />
+					</span>
+					<span class="col-start-4 row-start-2 grid content-center grid-rows-[auto_0.2rem_auto]">
+						<span class="row-start-1 text-[0.85rem] font-bold">Pago aprobado</span>
+						<span class="row-start-3 text-[0.7rem] text-white/60">Pedido #23174 · Klap</span>
+					</span>
+					<span class="col-span-3 col-start-2 row-start-4 grid grid-cols-[auto_1fr_auto] items-end">
+						<span class="col-start-1 font-display text-[1.6rem] leading-none text-lemon">$189.900</span>
+						<span class="col-start-3 text-[0.68rem] font-semibold text-white/55">CLP</span>
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Leads that became customers -->
+		<div class="absolute right-[4.5%] top-[14%]" data-parallax="12">
+			<div class="hero-card" style="--in:1.7s">
+				<div class="glass float grid w-[14rem] grid-cols-[1rem_1fr_1rem] grid-rows-[0.9rem_auto_0.35rem_auto_0.75rem_auto_0.9rem]" style="--float-duration:8s; --float-delay:-4s">
+					<span class="col-start-2 row-start-2 font-display text-[2.3rem] leading-none text-ink">28</span>
+					<span class="col-start-2 row-start-4 text-[0.72rem] font-semibold text-slate">empresas convertidas desde WhatsApp</span>
+					<span class="col-start-2 row-start-6 grid grid-rows-[auto_0.3rem_auto_0.3rem_auto] text-[0.62rem] font-bold">
+						<span class="row-start-1 grid grid-cols-[minmax(0,1fr)] rounded-md bg-ink/10"><span class="w-full rounded-md bg-ink text-lemon" style="padding:.2rem .45rem">Google Ads · Meta · web</span></span>
+						<span class="row-start-3 grid grid-cols-[minmax(0,1fr)] rounded-md bg-ink/10"><span class="w-[72%] rounded-md bg-lemon-3 text-ink" style="padding:.2rem .45rem">Leads calificados</span></span>
+						<span class="row-start-5 grid grid-cols-[minmax(0,1fr)] rounded-md bg-ink/10"><span class="w-[46%] rounded-md bg-mint text-ink" style="padding:.2rem .45rem">Clientes</span></span>
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Invoice sent to the ERP -->
+		<div class="absolute right-[3%] top-[50%]" data-parallax="22">
+			<div class="hero-card" style="--in:2s">
+				<div class="glass glass--dark float grid w-[13rem] grid-cols-[0.85rem_auto_0.6rem_1fr_0.85rem] grid-rows-[0.8rem_auto_0.8rem]" style="--float-duration:6.8s; --float-delay:-1s">
+					<span class="col-start-2 row-start-2 grid h-9 w-9 place-items-center rounded-xl bg-lemon text-ink">
+						<Icon name="receipt" size={18} stroke={2.2} />
+					</span>
+					<span class="col-start-4 row-start-2 grid content-center grid-rows-[auto_0.15rem_auto]">
+						<span class="row-start-1 text-[0.78rem] font-bold">Factura emitida</span>
+						<span class="row-start-3 text-[0.66rem] text-white/60">Enviada a Defontana</span>
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Scroll cue -->
+	<a href="#como-funciona" class="enter col-start-2 row-start-3 hidden grid-cols-[2px_0.8rem_auto] items-center self-center justify-self-start text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white/55 lg:grid" style="--e:1.2s">
+		<span class="scroll-cue__line col-start-1 h-10 w-[2px] bg-white/20"></span>
+		<span class="col-start-3">Desliza</span>
+	</a>
+</section>

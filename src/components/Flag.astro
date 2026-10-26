@@ -1,0 +1,72 @@
+---
+/** Country flags drawn in SVG (3:2), so they look the same on every system (emoji flags do not render on Windows). */
+interface Props {
+	code: "co" | "cl" | "ve" | "us" | "fr";
+	class?: string;
+	sheen?: boolean;
+}
+
+const { code, class: className, sheen = false } = Astro.props;
+
+/** Five-pointed star centred on (cx, cy) with outer radius r, as polygon points. */
+function star(cx: number, cy: number, r: number): string {
+	return Array.from({ length: 10 }, (_, index) => {
+		const radius = index % 2 === 0 ? r : r * 0.382;
+		const angle = -Math.PI / 2 + (index * Math.PI) / 5;
+		return `${(cx + radius * Math.cos(angle)).toFixed(2)},${(cy + radius * Math.sin(angle)).toFixed(2)}`;
+	}).join(" ");
+}
+
+/** The eight stars of Venezuela, on an arc inside the blue band. */
+const venezuelaStars = Array.from({ length: 8 }, (_, index) => {
+	const angle = ((160 - index * 20) * Math.PI) / 180;
+	return star(15 + 4.7 * Math.cos(angle), 14 - 4.7 * Math.sin(angle), 0.8);
+});
+
+const usStripes = Array.from({ length: 7 }, (_, index) => index * 2);
+const usStars = Array.from({ length: 20 }, (_, index) => ({ x: 1.3 + (index % 5) * 2.35, y: 1.25 + Math.floor(index / 5) * 2.65 }));
+---
+
+<span class:list={["relative inline-grid overflow-hidden rounded-[0.22em] shadow-[0_0_0_1px_rgba(5,12,23,.12)]", className]}>
+	<svg class="h-full w-full" viewBox="0 0 30 20" preserveAspectRatio="none" aria-hidden="true">
+		{code === "co" && (
+			<>
+				<rect width="30" height="10" fill="#fcd116" />
+				<rect y="10" width="30" height="5" fill="#003893" />
+				<rect y="15" width="30" height="5" fill="#ce1126" />
+			</>
+		)}
+		{code === "cl" && (
+			<>
+				<rect width="30" height="10" fill="#ffffff" />
+				<rect y="10" width="30" height="10" fill="#d52b1e" />
+				<rect width="10" height="10" fill="#0039a6" />
+				<polygon points={star(5, 5, 2.6)} fill="#ffffff" />
+			</>
+		)}
+		{code === "ve" && (
+			<>
+				<rect width="30" height="6.67" fill="#ffcc00" />
+				<rect y="6.67" width="30" height="6.67" fill="#00247d" />
+				<rect y="13.33" width="30" height="6.67" fill="#cf142b" />
+				{venezuelaStars.map((points) => <polygon points={points} fill="#ffffff" />)}
+			</>
+		)}
+		{code === "us" && (
+			<>
+				<rect width="30" height="20" fill="#ffffff" />
+				{usStripes.map((stripe) => <rect y={(stripe * 20) / 13} width="30" height={20 / 13} fill="#b22234" />)}
+				<rect width="12" height={(7 * 20) / 13} fill="#3c3b6e" />
+				{usStars.map((dot) => <circle cx={dot.x} cy={dot.y} r="0.45" fill="#ffffff" />)}
+			</>
+		)}
+		{code === "fr" && (
+			<>
+				<rect width="10" height="20" fill="#0055a4" />
+				<rect x="10" width="10" height="20" fill="#ffffff" />
+				<rect x="20" width="10" height="20" fill="#ef4135" />
+			</>
+		)}
+	</svg>
+	{sheen && <span class="flag-sheen" aria-hidden="true"></span>}
+</span>

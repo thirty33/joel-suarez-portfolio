@@ -7,9 +7,24 @@ on:
       - master
   workflow_dispatch:
 
+# Un despliegue nuevo espera al que está en curso en vez de cancelarlo: cancelar
+# el job no detiene el update de CloudFormation, y el siguiente chocaría con
+# UPDATE_IN_PROGRESS.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
 env:
   NODE_VERSION: '20'
   STACK_NAME: 'joel-portfolio-prod'
+  # us-east-1 escrito aquí y no tomado de un secret: CloudFront solo acepta
+  # certificados ACM de esa región y el WAF de alcance CLOUDFRONT solo existe ahí.
+  AWS_REGION: 'us-east-1'
+  # Bucket y dominio fijos aquí, no en secrets: no son secretos y así el workflow
+  # no puede apuntar por accidente a otro sitio. El repo es público: aquí no va
+  # ningún ID de cuenta, zona ni distribución; se buscan en AWS y se enmascaran.
+  BUCKET_NAME: 'joel-portfolio-site'
+  DOMAIN_NAME: 'joelsuarez.dev'
 
 jobs:
   infrastructure:
@@ -18,84 +33,53 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
+      # Los logs de un repo público los ve cualquiera: el ID de la cuenta va enmascarado.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
 
-      - name: Check stack status
-        id: stack_status
+      # Un primer intento fallido deja el stack en ROLLBACK_COMPLETE, estado desde el
+      # que `deploy` ya no puede seguir. Se borra SOLO en ese estado.
+      - name: Clear a stack stuck in ROLLBACK_COMPLETE
         run: |
           STATUS=$(aws cloudformation describe-stacks \
             --stack-name ${{ env.STACK_NAME }} \
-            --query "Stacks[0].StackStatus" \
-            --output text 2>/dev/null || echo "DOES_NOT_EXIST")
-          echo "status=$STATUS" >> $GITHUB_OUTPUT
-
-      - name: Delete failed stack if ROLLBACK_COMPLETE
-        if: steps.stack_status.outputs.status == 'ROLLBACK_COMPLETE'
-        run: |
-          echo "Stack in ROLLBACK_COMPLETE state, deleting..."
-          aws cloudformation delete-stack --stack-name ${{ env.STACK_NAME }}
-          aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }}
-          echo "Stack deleted"
-
-      - name: Check if infrastructure changed
-        id: check_infra
-        run: |
-          STATUS="${{ steps.stack_status.outputs.status }}"
-          if [ "$STATUS" = "DOES_NOT_EXIST" ] || [ "$STATUS" = "ROLLBACK_COMPLETE" ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          elif git diff HEAD~1 --name-only 2>/dev/null | grep -q 'infrastructure/cloudformation.yml'; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
+            --query "Stacks[0].StackStatus" --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+          if [ "$STATUS" = "ROLLBACK_COMPLETE" ]; then
+            aws cloudformation delete-stack --stack-name ${{ env.STACK_NAME }}
+            aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }}
           fi
 
-      - name: Create stack (first run only)
-        if: steps.check_infra.outputs.changed == 'true' && (steps.stack_status.outputs.status == 'DOES_NOT_EXIST' || steps.stack_status.outputs.status == 'ROLLBACK_COMPLETE')
+      # La zona hospedada la crea el registro del dominio en Route 53: se busca por
+      # nombre (no se escribe su ID en el repo) y se enmascara en el log.
+      # `deploy` crea el stack la primera vez y lo actualiza después. Sin cambios no
+      # hace nada (--no-fail-on-empty-changeset); si algo falla, el job queda rojo.
+      - name: Create or update stack
         run: |
-          aws cloudformation create-stack \
-            --stack-name ${{ env.STACK_NAME }} \
-            --template-body file://infrastructure/cloudformation.yml \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --parameters \
-              ParameterKey=SiteBucketName,ParameterValue=${{ secrets.AWS_S3_SITE_BUCKET_NAME }} \
-              ParameterKey=AssetsBucketName,ParameterValue=${{ secrets.AWS_S3_ASSETS_BUCKET_NAME }} \
-              ParameterKey=Environment,ParameterValue=${{ secrets.AWS_ENVIRONMENT }} \
-              ParameterKey=DeployUserName,ParameterValue=${{ secrets.AWS_DEPLOY_USER_NAME }} \
-              ParameterKey=AssetsPublicKeyEncoded,ParameterValue="${{ secrets.ASSETS_PUBLIC_KEY_PEM }}"
+          ZONE_ID=$(aws route53 list-hosted-zones-by-name \
+            --dns-name "${{ env.DOMAIN_NAME }}" --max-items 1 \
+            --query "HostedZones[?Name=='${{ env.DOMAIN_NAME }}.'].Id | [0]" --output text)
+          ZONE_ID="${ZONE_ID#/hostedzone/}"
+          if [ -z "$ZONE_ID" ] || [ "$ZONE_ID" = "None" ]; then
+            echo "::error::No existe la zona hospedada de ${{ env.DOMAIN_NAME }} en Route 53. ¿Falta registrar el dominio?"
+            exit 1
+          fi
+          echo "::add-mask::$ZONE_ID"
 
-          echo "Waiting for stack creation..."
-          aws cloudformation wait stack-create-complete \
-            --stack-name ${{ env.STACK_NAME }}
-
-          echo "Stack created successfully"
-
-      - name: Update stack
-        if: steps.check_infra.outputs.changed == 'true' && steps.stack_status.outputs.status != 'DOES_NOT_EXIST' && steps.stack_status.outputs.status != 'CREATE_IN_PROGRESS'
-        run: |
-          aws cloudformation update-stack \
+          aws cloudformation deploy \
             --stack-name ${{ env.STACK_NAME }} \
-            --template-body file://infrastructure/cloudformation.yml \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --parameters \
-              ParameterKey=SiteBucketName,UsePreviousValue=true \
-              ParameterKey=AssetsBucketName,UsePreviousValue=true \
-              ParameterKey=Environment,UsePreviousValue=true \
-              ParameterKey=DeployUserName,UsePreviousValue=true \
-              ParameterKey=AssetsPublicKeyEncoded,UsePreviousValue=true \
-          && aws cloudformation wait stack-update-complete \
-            --stack-name ${{ env.STACK_NAME }} \
-          && echo "Stack updated successfully" \
-          || echo "No updates to perform or update failed - check stack events"
+            --template-file infrastructure/cloudformation.yml \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              SiteBucketName=${{ env.BUCKET_NAME }} \
+              DomainName=${{ env.DOMAIN_NAME }} \
+              HostedZoneId="$ZONE_ID" \
+              Environment=prod
 
   build:
     name: Build
@@ -148,20 +132,36 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
 
+      # Cache-Control como metadato de cada archivo (el plan Free no admite políticas
+      # de cabeceras personalizadas). Primero los assets con hash y las fuentes,
+      # inmutables a 1 año; después el resto (HTML, imágenes, íconos) con
+      # revalidación corta, para que cada deploy se vea en minutos.
       - name: Deploy to S3
-        env:
-          S3_BUCKET: ${{ secrets.AWS_S3_SITE_BUCKET_NAME }}
-        if: env.S3_BUCKET != ''
         run: |
-          aws s3 sync dist/ s3://${{ secrets.AWS_S3_SITE_BUCKET_NAME }} --delete
+          aws s3 sync dist/_astro s3://${{ env.BUCKET_NAME }}/_astro --delete \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync dist/fonts s3://${{ env.BUCKET_NAME }}/fonts --delete \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 sync dist/ s3://${{ env.BUCKET_NAME }} --delete \
+            --exclude "_astro/*" --exclude "fonts/*" \
+            --cache-control "public, max-age=300, must-revalidate"
 
+      # El ID de la distribución se lee de los outputs del stack y se enmascara; de la
+      # respuesta solo se imprime el estado de la invalidación.
       - name: Invalidate CloudFront cache
-        env:
-          CF_DISTRIBUTION_ID: ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
-        if: env.CF_DISTRIBUTION_ID != ''
         run: |
+          DIST=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.STACK_NAME }} \
+            --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
+            --output text)
+          echo "::add-mask::$DIST"
           aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
+            --distribution-id "$DIST" \
+            --paths "/*" \
+            --query "Invalidation.Status" --output text
+
+      - name: Show URL
+        run: echo "Sitio -> https://${{ env.DOMAIN_NAME }}"

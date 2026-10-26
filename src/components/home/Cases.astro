@@ -1,0 +1,264 @@
+---
+import Icon from "../Icon.astro";
+import SectionHeading from "./SectionHeading.astro";
+import { MAIN_CASES, OTHER_PROJECTS, SIDE_PROJECTS, whatsappLink } from "../../data/home";
+import { at, tracks } from "../../lib/grid";
+
+const THEME = {
+	backoffice: { card: "bg-ink text-white ring-1 ring-white/10", muted: "text-white/70", chip: "bg-lemon text-ink", check: "bg-lemon text-ink", panel: "bg-white/[0.06] ring-1 ring-white/10", tab: "slide-tab--dark", button: "btn--lemon", accent: "text-lemon" },
+	b2b: { card: "bg-paper text-ink", muted: "text-ink/70", chip: "bg-ink text-lemon", check: "bg-ink text-lemon", panel: "bg-ink/[0.05] ring-1 ring-ink/10", tab: "", button: "btn--ink", accent: "text-ink" },
+	b2c: { card: "bg-lemon text-ink", muted: "text-ink/75", chip: "bg-ink text-lemon", check: "bg-ink text-lemon", panel: "bg-white/55 ring-1 ring-ink/10", tab: "", button: "btn--ink", accent: "text-ink" },
+} as const;
+
+/** Full class names so Tailwind sees them: phones stack everything, sm+ uses two columns. */
+const MODULE_PLACE = [
+	"row-start-1 sm:col-start-1",
+	"row-start-3 sm:col-start-3 sm:row-start-1",
+	"row-start-5 sm:col-start-1 sm:row-start-3",
+	"row-start-7 sm:col-start-3 sm:row-start-3",
+	"row-start-9 sm:col-start-1 sm:row-start-5",
+	"row-start-11 sm:col-start-3 sm:row-start-5",
+];
+const TAB_PLACE = ["col-start-1 row-start-1", "col-start-3 row-start-1", "col-start-1 row-start-3 sm:col-start-5 sm:row-start-1", "col-start-3 row-start-3 sm:col-start-7 sm:row-start-1"];
+const OTHER_PLACE = ["row-start-1 lg:col-start-1", "row-start-3 lg:col-start-3 lg:row-start-1"];
+const SIDE_PLACE = [
+	"row-start-1 sm:col-start-1 sm:row-start-1 lg:col-start-1",
+	"row-start-3 sm:col-start-3 sm:row-start-1 lg:col-start-3",
+	"row-start-5 sm:col-start-1 sm:row-start-3 lg:col-start-5 lg:row-start-1",
+	"row-start-7 sm:col-start-3 sm:row-start-3 lg:col-start-7 lg:row-start-1",
+];
+---
+
+<section id="casos" class="relative overflow-clip bg-navy text-white shell grid-rows-[5rem_auto_3rem_auto_4.5rem_auto_4rem_auto_6rem] lg:grid-rows-[8rem_auto_4.5rem_auto_6rem_auto_5rem_auto_9rem]" aria-labelledby="casos-title" data-motion data-theme="dark">
+	<div class="pointer-events-none absolute inset-0 opacity-60" style="background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size:64px 64px;" aria-hidden="true"></div>
+
+	<div class="col-start-2 row-start-2">
+		<SectionHeading number="02" label="Casos reales" ghost="Portafolio" id="casos-title" tone="dark">
+			<Fragment slot="title">Sistemas reales, <span class="hl">no maquetas</span></Fragment>
+			Tres sistemas que diseñé y desarrollo para Delicius Food, una empresa de alimentación en Chile. Desliza: cada uno se apila sobre el anterior.
+		</SectionHeading>
+	</div>
+
+	<!-- The three Delicius systems, stacking while you scroll -->
+	<div class="col-start-2 row-start-4 grid" style={`grid-template-rows:${tracks(MAIN_CASES.length, "auto", "2rem")}`} data-case-stack>
+		{MAIN_CASES.map((item, index) => {
+			const theme = THEME[item.id];
+			return (
+				<article
+					class:list={["case-card grid rounded-[30px] shadow-[0_50px_100px_-50px_rgba(0,0,0,.9)]", theme.card, "grid-cols-[1.25rem_minmax(0,1fr)_1.25rem] grid-rows-[1.25rem_auto_1.75rem_auto_1.5rem] lg:grid-cols-[3rem_minmax(0,1fr)_3.5rem_minmax(0,1.2fr)_3rem] lg:grid-rows-[3rem_auto_3rem]"]}
+					style={`grid-row:${at(index)}; --stick:${5.5 + index * 1.25}rem; z-index:${index + 1}`}
+					data-case
+				>
+					<!-- Words -->
+					<div class="col-start-2 row-start-4 grid content-center grid-rows-[auto_1.1rem_auto_0.9rem_auto_1.5rem_auto_1.5rem_auto_1.25rem_auto] lg:row-start-2">
+						<p class="row-start-1 grid grid-rows-[auto_0.5rem_auto] justify-items-start sm:grid-cols-[auto_0.75rem_auto] sm:grid-rows-1 sm:items-center sm:justify-start">
+							<span class:list={["chip row-start-1", theme.chip]}>{item.product}</span>
+							<span class:list={["row-start-3 text-[0.78rem] font-bold sm:col-start-3 sm:row-start-1", theme.muted]}>{item.client} · {item.years}</span>
+						</p>
+						<h3 class="row-start-3 text-[1.55rem] font-extrabold leading-[1.15] text-balance lg:text-[1.95rem]">{item.title}</h3>
+						<p class:list={["row-start-5 text-[0.98rem] leading-relaxed", theme.muted]}>{item.summary}</p>
+
+						{item.modules && (
+							<ul class="row-start-7 grid grid-rows-[auto_1rem_auto_1rem_auto_1rem_auto_1rem_auto_1rem_auto] sm:grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] sm:grid-rows-[auto_1rem_auto_1rem_auto]">
+								{item.modules.map((module, moduleIndex) => (
+									<li class:list={["grid content-start grid-cols-[0.55rem_0.6rem_minmax(0,1fr)] grid-rows-[auto_0.3rem_auto] items-baseline", MODULE_PLACE[moduleIndex]]}>
+										<span class:list={["col-start-1 row-start-1 h-[0.55rem] w-[0.55rem] self-center rounded-[2px]", item.id === "backoffice" ? "bg-lemon" : "bg-ink"]}></span>
+										<span class="col-start-3 row-start-1 text-[0.9rem] font-extrabold">{module.title}</span>
+										<span class:list={["col-start-3 row-start-3 text-[0.8rem] leading-snug", theme.muted]}>{module.text}</span>
+									</li>
+								))}
+							</ul>
+						)}
+
+						{item.points && (
+							<ul class="row-start-7 grid" style={`grid-template-rows:${tracks(item.points.length, "auto", "0.6rem")}`}>
+								{item.points.map((point, pointIndex) => (
+									<li class="grid grid-cols-[1.35rem_0.65rem_1fr] items-start text-[0.92rem] leading-snug" style={`grid-row:${at(pointIndex)}`}>
+										<span class:list={["col-start-1 grid h-[1.35rem] w-[1.35rem] place-items-center rounded-full", theme.check]}><Icon name="check" size={12} stroke={3.2} /></span>
+										<span class="col-start-3">{point}</span>
+									</li>
+								))}
+							</ul>
+						)}
+
+						<div class="row-start-9 grid grid-rows-[auto_0.9rem_auto]">
+							{item.stats && (
+								<dl class="row-start-1 grid grid-cols-[auto_1.5rem_auto_1.5rem_auto] justify-start">
+									{item.stats.map((stat, statIndex) => (
+										<div class="grid grid-rows-[auto_0.25rem_auto]" style={`grid-column:${at(statIndex)}`}>
+											<dd class:list={["row-start-1 font-display text-[1.7rem] leading-none", theme.accent]}>{stat.value}</dd>
+											<dt class:list={["row-start-3 max-w-[8rem] text-[0.7rem] font-semibold leading-snug", theme.muted]}>{stat.label}</dt>
+										</div>
+									))}
+								</dl>
+							)}
+							<p class:list={["row-start-3 text-[0.8rem] font-semibold", theme.muted]}>{item.stack}</p>
+						</div>
+
+						<!-- The question for the visitor: the code is private, the solution is not -->
+						<div class:list={["row-start-11 grid rounded-[18px] grid-cols-[1.1rem_minmax(0,1fr)_1.1rem] grid-rows-[1rem_auto_0.85rem_auto_1rem] sm:grid-cols-[1.1rem_minmax(0,1fr)_1rem_auto_1.1rem] sm:grid-rows-[1rem_auto_1rem] sm:items-center", theme.panel]}>
+							<p class="col-start-2 row-start-2 text-[0.92rem] font-bold leading-snug">¿Necesitas una solución así para tu negocio?</p>
+							<div class="col-start-2 row-start-4 grid grid-cols-[auto_0.6rem_auto] justify-start sm:col-start-4 sm:row-start-2">
+								<a class:list={["btn btn--sm btn-ic col-start-1", theme.button]} href={whatsappLink(item.cta)} target="_blank" rel="noopener">
+									<span class="ico" style="--ico:url(/icons/whatsapp.svg); --ico-size:1rem"></span>
+									<span>Escríbeme</span>
+								</a>
+								{item.link && (
+									<a class="btn btn--sm btn-ic col-start-3 bg-white text-ink ring-1 ring-ink/10" href={item.link.href} target="_blank" rel="noopener">
+										<span>Ver sitio</span>
+										<Icon name="arrow-up-right" size={15} stroke={2.4} />
+									</a>
+								)}
+							</div>
+						</div>
+					</div>
+
+					<!-- Visual -->
+					<div class="relative col-start-2 row-start-2 grid content-center lg:col-start-4 lg:row-start-2">
+						{item.id !== "b2c" && (
+							<div class:list={["relative grid grid-rows-[auto_0.9rem_auto]", item.mobile ? "grid-cols-[minmax(0,1fr)_2.5rem] lg:grid-cols-[minmax(0,1fr)_4rem]" : ""]} data-slides>
+								<div class="col-start-1 row-start-1 grid grid-cols-[auto_0.4rem_auto] grid-rows-[auto_0.4rem_auto] justify-start sm:grid-cols-[auto_0.4rem_auto_0.4rem_auto_0.4rem_auto] sm:grid-rows-1" role="tablist" aria-label={`Pantallas de ${item.product}`}>
+									{item.shots.map((shot, shotIndex) => (
+										<button type="button" role="tab" class:list={["slide-tab", theme.tab, TAB_PLACE[shotIndex], shotIndex === 0 && "is-active"]} aria-selected={shotIndex === 0 ? "true" : "false"} data-slide-tab>{shot.label}</button>
+									))}
+								</div>
+								<div class="browser col-span-2 col-start-1 row-start-3 lg:col-span-1">
+									<div class="browser__bar grid grid-cols-[0.8rem_10px_0.4rem_10px_0.4rem_10px_0.9rem_1fr_0.8rem] grid-rows-[0.55rem_auto_0.55rem] items-center">
+										<span class="browser__dot col-start-2 row-start-2 bg-[#ff5f57]"></span>
+										<span class="browser__dot col-start-4 row-start-2 bg-[#febc2e]"></span>
+										<span class="browser__dot col-start-6 row-start-2 bg-[#28c840]"></span>
+										<span class="browser__url col-start-8 row-start-2" data-slide-url>{item.shots[0].url}</span>
+									</div>
+									<div class="slides-viewport">
+										{item.shots.map((shot, shotIndex) => (
+											<img
+												class:list={["slide", shotIndex === 0 && "is-active"]}
+												src={shot.src}
+												srcset={shot.small ? `${shot.small} 960w, ${shot.src} 1425w` : undefined}
+												sizes="(min-width: 1024px) 40rem, 92vw"
+												width="1425"
+												height="860"
+												alt={shot.alt}
+												loading="lazy"
+												decoding="async"
+												data-slide
+												data-url={shot.url}
+											/>
+										))}
+									</div>
+								</div>
+								{item.mobile && (
+									<div class="device absolute -bottom-6 right-0 w-[7.5rem] rotate-[3deg] lg:-bottom-10 lg:-right-5 lg:w-[9.5rem]">
+										<img src={item.mobile} width="390" height="844" alt="La tienda B2B en el celular" loading="lazy" decoding="async" />
+									</div>
+								)}
+								{item.id === "backoffice" && (
+									<span class="chip chip-ic float absolute -left-6 top-[34%] bg-lemon text-ink shadow-lg max-lg:hidden" style="--float-duration:5.5s"><Icon name="sparkle" size={14} /><span>IA: lead calificado · asesor avisado</span></span>
+								)}
+								{item.id === "b2b" && (
+									<span class="chip chip-ic float absolute -left-6 top-[30%] bg-ink text-lemon shadow-lg max-lg:hidden" style="--float-duration:6s"><Icon name="clock" size={14} /><span>Pedidos hasta el martes 15:30</span></span>
+								)}
+							</div>
+						)}
+
+						{item.id === "b2c" && (
+							<div class="relative grid grid-cols-[minmax(0,1fr)_2.5rem] grid-rows-[auto_3rem] lg:grid-cols-[minmax(0,1fr)_4.5rem] lg:grid-rows-[auto_4rem]">
+								<div class="browser col-span-2 col-start-1 row-start-1 lg:col-span-1">
+									<div class="browser__bar grid grid-cols-[0.8rem_10px_0.4rem_10px_0.4rem_10px_0.9rem_1fr_0.8rem] grid-rows-[0.55rem_auto_0.55rem] items-center">
+										<span class="browser__dot col-start-2 row-start-2 bg-[#ff5f57]"></span>
+										<span class="browser__dot col-start-4 row-start-2 bg-[#febc2e]"></span>
+										<span class="browser__dot col-start-6 row-start-2 bg-[#28c840]"></span>
+										<span class="browser__url col-start-8 row-start-2">{item.shots[0].url}</span>
+									</div>
+									<div class="shot-viewport" data-shot>
+										<img class="scroll-shot" src={item.shots[0].src} width="960" height="8008" alt={item.shots[0].alt} loading="lazy" decoding="async" />
+									</div>
+								</div>
+								<div class="device absolute -bottom-6 right-0 w-[8.5rem] rotate-[4deg] lg:-bottom-10 lg:-right-4 lg:w-[11rem]">
+									<img src={item.mobile} width="378" height="844" alt="La tienda en el celular" loading="lazy" decoding="async" />
+								</div>
+								<span class="chip chip-ic float absolute -left-2 top-[18%] bg-ink text-lemon shadow-lg lg:-left-6" style="--float-duration:5.5s"><Icon name="trend" size={14} /><span>+194% clics</span></span>
+								<span class="chip chip-ic float absolute bottom-[22%] left-[6%] bg-white text-ink shadow-lg" style="--float-duration:6.5s; --float-delay:-3s"><Icon name="check-circle" size={14} /><span>Pago Klap aprobado</span></span>
+							</div>
+						)}
+					</div>
+				</article>
+			);
+		})}
+	</div>
+
+	<!-- Other products built inside other teams -->
+	<div class="col-start-2 row-start-6 grid grid-rows-[auto_1.25rem_auto]">
+		<p class="eyebrow row-start-1 grid grid-cols-[auto_0.6rem_auto] items-center justify-start text-lemon" data-reveal>
+			<Icon name="layers" size={16} />
+			<span class="col-start-3">Otros proyectos en los que he trabajado</span>
+		</p>
+		<ul class="row-start-3 grid grid-rows-[auto_1.25rem_auto] lg:grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)] lg:grid-rows-1">
+			{OTHER_PROJECTS.map((project, index) => (
+				<li class:list={["card-spot lift grid content-start rounded-[26px] bg-white/[0.05] ring-1 ring-white/10 grid-cols-[1.5rem_minmax(0,1fr)_1.5rem] grid-rows-[1.5rem_auto_1rem_auto_0.5rem_auto_0.85rem_auto_1.1rem_auto_1.1rem_auto_1.25rem_auto_1.5rem] lg:grid-cols-[2rem_minmax(0,1fr)_2rem] lg:grid-rows-[2rem_auto_1rem_auto_0.5rem_auto_0.85rem_auto_1.1rem_auto_1.1rem_auto_1.25rem_auto_2rem]", OTHER_PLACE[index]]} data-reveal data-spot style={`--d:${index * 0.1}s`}>
+					<p class="col-start-2 row-start-2 grid grid-cols-[auto_0.75rem_auto] items-center justify-start">
+						<span class="chip col-start-1 bg-lemon text-ink">{project.company}</span>
+						<span class="col-start-3 text-[0.78rem] font-semibold text-white/60">{project.years}</span>
+					</p>
+					<h3 class="display col-start-2 row-start-4 text-[2.2rem] leading-none text-white">{project.name}</h3>
+					<p class="col-start-2 row-start-6 text-[1.05rem] font-bold text-lemon">{project.title}</p>
+					<p class="col-start-2 row-start-8 text-[0.92rem] leading-relaxed text-white/70">{project.text}</p>
+					<ul class="col-start-2 row-start-10 grid" style={`grid-template-rows:${tracks(project.points.length, "auto", "0.5rem")}`}>
+						{project.points.map((point, pointIndex) => (
+							<li class="grid grid-cols-[1.25rem_0.6rem_1fr] items-start text-[0.86rem] leading-snug text-white/85" style={`grid-row:${at(pointIndex)}`}>
+								<span class="col-start-1 grid h-[1.25rem] w-[1.25rem] place-items-center rounded-full bg-lemon/15 text-lemon"><Icon name="check" size={11} stroke={3.2} /></span>
+								<span class="col-start-3">{point}</span>
+							</li>
+						))}
+					</ul>
+					<p class="col-start-2 row-start-12 text-[0.78rem] font-semibold text-white/55">{project.stack}</p>
+					<div class="col-start-2 row-start-14 grid grid-rows-[auto_0.9rem_auto]">
+						<p class="row-start-1 grid grid-cols-[auto_0.5rem_auto_0.5rem_auto] items-center justify-start text-[0.82rem]">
+							{project.links.map((link, linkIndex) => (
+								<a class="chip chip-ic bg-white/10 text-white ring-1 ring-white/15 transition-colors hover:bg-white/20" style={`grid-column:${at(linkIndex)}`} href={link.href} target="_blank" rel="noopener">
+									<span>{link.label}</span>
+									<Icon name="arrow-up-right" size={13} stroke={2.4} />
+								</a>
+							))}
+						</p>
+						<div class="row-start-3 grid rounded-[16px] bg-white/[0.06] ring-1 ring-white/10 grid-cols-[1rem_minmax(0,1fr)_1rem] grid-rows-[0.8rem_auto_0.7rem_auto_0.8rem] sm:grid-cols-[1rem_minmax(0,1fr)_0.75rem_auto_0.75rem] sm:grid-rows-[0.7rem_auto_0.7rem] sm:items-center">
+							<p class="col-start-2 row-start-2 text-[0.86rem] font-bold">¿Necesitas una solución de este tipo para tu negocio?</p>
+							<a class="btn btn--lemon btn--sm btn-ic col-start-2 row-start-4 justify-self-start sm:col-start-4 sm:row-start-2" href={whatsappLink(project.cta)} target="_blank" rel="noopener">
+								<span class="ico" style="--ico:url(/icons/whatsapp.svg); --ico-size:1rem"></span>
+								<span>Escríbeme</span>
+							</a>
+						</div>
+					</div>
+				</li>
+			))}
+		</ul>
+	</div>
+
+	<!-- Side projects: own products and experiments -->
+	<div class="col-start-2 row-start-8 grid grid-rows-[auto_1.25rem_auto]">
+		<p class="eyebrow row-start-1 grid grid-cols-[auto_0.6rem_auto] items-center justify-start text-lemon" data-reveal>
+			<Icon name="flask" size={16} />
+			<span class="col-start-3">Side projects</span>
+		</p>
+		<ul class="row-start-3 grid grid-rows-[auto_1rem_auto_1rem_auto_1rem_auto] sm:grid-cols-[1fr_1rem_1fr] sm:grid-rows-[auto_1rem_auto] lg:grid-cols-[1fr_1.25rem_1fr_1.25rem_1fr_1.25rem_1fr] lg:grid-rows-1">
+			{SIDE_PROJECTS.map((project, index) => (
+				<li class:list={["card-spot lift grid content-start rounded-[20px] bg-white/[0.05] ring-1 ring-white/10 grid-cols-[1.3rem_1fr_1.3rem] grid-rows-[1.2rem_auto_0.7rem_auto_1rem_auto_1.3rem]", SIDE_PLACE[index]]} data-reveal data-spot style={`--d:${index * 0.08}s`}>
+					<p class="col-start-2 row-start-2 grid grid-rows-[auto_0.5rem_auto]">
+						<span class="row-start-1 text-[1.02rem] font-extrabold">{project.name}</span>
+						<span class="chip row-start-3 bg-lemon/15 text-[0.62rem] text-lemon">{project.tag}</span>
+					</p>
+					<p class="col-start-2 row-start-4 text-[0.86rem] leading-relaxed text-white/65">{project.text}</p>
+					{project.repo ? (
+						<a class="col-start-2 row-start-6 grid grid-cols-[auto_0.45rem_auto_0.35rem_auto] items-center justify-start text-[0.8rem] font-bold text-white/85 transition-colors hover:text-lemon" href={project.repo} target="_blank" rel="noopener">
+							<span class="ico col-start-1" style="--ico:url(/icons/github.svg); --ico-size:1rem"></span>
+							<span class="col-start-3">Ver repositorio</span>
+							<span class="col-start-5"><Icon name="arrow-up-right" size={13} stroke={2.4} /></span>
+						</a>
+					) : (
+						<p class="col-start-2 row-start-6 text-[0.78rem] font-semibold text-white/45">Repositorio privado</p>
+					)}
+				</li>
+			))}
+		</ul>
+	</div>
+</section>

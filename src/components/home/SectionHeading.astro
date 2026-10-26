@@ -1,0 +1,38 @@
+---
+/**
+ * Numbered heading of the brand design: the number, a rule, the label; the title with a lemon
+ * marker; and the giant outlined word behind it.
+ */
+interface Props {
+	number: string;
+	label: string;
+	ghost: string;
+	id?: string;
+	tone?: "dark" | "light";
+}
+
+const { number, label, ghost, id, tone = "light" } = Astro.props;
+const dark = tone === "dark";
+---
+
+<div class="relative isolate grid grid-rows-[auto_1.1rem_auto_1.25rem_auto] items-end lg:grid-cols-[minmax(0,1fr)_3.5rem_minmax(0,24rem)] lg:grid-rows-[auto_1.25rem_auto]" data-reveal>
+	<p
+		class:list={["ghost absolute -left-[0.04em] -top-[0.42em] -z-10 text-[clamp(5.5rem,16vw,14rem)]", dark ? "" : ""]}
+		style={dark ? "--ghost-stroke:rgba(255,255,255,.07)" : "--ghost-stroke:rgba(5,12,23,.07)"}
+		aria-hidden="true"
+		data-ghost
+	>
+		{ghost}
+	</p>
+	<p class="row-start-1 grid grid-cols-[auto_0.85rem_2.75rem_0.85rem_auto] items-center justify-start lg:col-span-3">
+		<span class:list={["col-start-1 font-display text-[1.5rem] leading-none", dark ? "text-lemon" : "text-ink"]}>{number}</span>
+		<span class:list={["col-start-3 h-[2px]", dark ? "bg-white/30" : "bg-ink/25"]}></span>
+		<span class:list={["eyebrow col-start-5", dark ? "text-white/70" : "text-ink/60"]}>{label}</span>
+	</p>
+	<h2 id={id} class:list={["display row-start-3 text-[2.75rem] leading-[1.06] text-balance sm:text-[3.4rem] lg:text-[4.4rem]", dark ? "text-white" : "text-ink"]}>
+		<slot name="title" />
+	</h2>
+	<p class:list={["row-start-5 text-[1rem] leading-relaxed text-pretty lg:col-start-3 lg:row-start-3 lg:text-[1.08rem]", dark ? "text-white/70" : "text-ink/70"]}>
+		<slot />
+	</p>
+</div>

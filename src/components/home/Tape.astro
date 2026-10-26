@@ -1,0 +1,32 @@
+---
+import Icon from "../Icon.astro";
+import { TAPE_ITEMS } from "../../data/home";
+
+/** Each band repeats its items twice so the loop has no seam; a star column sits between two items. */
+const loop = [...TAPE_ITEMS, ...TAPE_ITEMS];
+const columns = loop.map(() => "auto 4.2rem").join(" ");
+const names = Array.from({ length: 8 }, () => "Joel Suárez");
+const nameColumns = names.map(() => "auto 3rem").join(" ");
+---
+
+<div class="relative z-10 grid -translate-y-6 grid-rows-[auto] overflow-hidden" aria-hidden="true" data-motion>
+	<div class="tape row-start-1 col-start-1 grid grid-rows-[0.7rem_auto_0.7rem] bg-navy" style="--tape-rotate:1.6deg">
+		<div class="marquee marquee--reverse row-start-2">
+			<div class="marquee__track" style={`--marquee-duration:70s; grid-template-columns:${nameColumns}`}>
+				{names.map((name, index) => (
+					<span class="ghost text-[2.6rem] leading-none" style={`grid-column:${index * 2 + 1}; --ghost-stroke:rgba(242,233,109,.55)`}>{name}</span>
+				))}
+			</div>
+		</div>
+	</div>
+	<div class="tape row-start-1 col-start-1 grid grid-rows-[0.85rem_auto_0.85rem] self-center bg-lemon text-ink" style="--tape-rotate:-2deg">
+		<div class="marquee row-start-2">
+			<div class="marquee__track" style={`--marquee-duration:46s; grid-template-columns:${columns}`}>
+				{loop.map((item, index) => [
+					<span class="display text-[1.55rem] leading-none" style={`grid-column:${index * 2 + 1}`}>{item}</span>,
+					<span class="grid justify-items-center" style={`grid-column:${index * 2 + 2}`}><Icon name="star" size={18} /></span>,
+				])}
+			</div>
+		</div>
+	</div>
+</div>

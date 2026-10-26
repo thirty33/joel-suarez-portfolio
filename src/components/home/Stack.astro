@@ -1,0 +1,75 @@
+---
+import Icon from "../Icon.astro";
+import SectionHeading from "./SectionHeading.astro";
+import { STACK_GROUPS, STACK_ROWS, STACK_ROWS_2 } from "../../data/home";
+
+const rowOne = [...STACK_ROWS, ...STACK_ROWS];
+const rowTwo = [...STACK_ROWS_2, ...STACK_ROWS_2];
+const columns = (count: number) => Array.from({ length: count }, () => "auto 0.85rem").join(" ");
+
+/** Brands whose official mark is a wordmark: unreadable at 24px, so they get an interface icon. */
+const FALLBACK: Record<string, "database" | "dashboard"> = { mysql: "database", filament: "dashboard" };
+
+const GROUP_ICONS = ["terminal", "dashboard", "sparkle", "cloud", "card", "shield"] as const;
+---
+
+<section id="stack" class="relative overflow-hidden bg-ink text-white shell grid-rows-[5rem_auto_3rem_auto_3rem_auto_6rem] lg:grid-rows-[8rem_auto_4rem_auto_4rem_auto_9rem]" aria-labelledby="stack-title" data-motion data-theme="dark">
+	<div class="hero__glow -left-[16rem] bottom-[-10rem] h-[38rem] w-[38rem]" aria-hidden="true"></div>
+	<div class="col-start-2 row-start-2">
+		<SectionHeading number="04" label="Stack" ghost="Stack" id="stack-title" tone="dark">
+			<Fragment slot="title">Herramientas que uso <span class="hl">todos los días</span></Fragment>
+			Elijo la tecnología por lo que necesita tu negocio, pero esta es la caja de herramientas con la que ya tengo sistemas en producción.
+		</SectionHeading>
+	</div>
+
+	<!-- Two bands of logos, full width -->
+	<div class="col-span-3 col-start-1 row-start-4 grid grid-rows-[auto_0.85rem_auto]" aria-label="Tecnologías">
+		<div class="marquee marquee-fade row-start-1">
+			<ul class="marquee__track" style={`--marquee-duration:55s; grid-template-columns:${columns(rowOne.length)}`}>
+				{rowOne.map(([slug, name], index) => (
+					<li class="grid grid-cols-[1.1rem_1.5rem_0.6rem_auto_1.25rem] grid-rows-[0.85rem_auto_0.85rem] items-center rounded-full bg-white/[0.05] ring-1 ring-white/10" style={`grid-column:${index * 2 + 1}`} aria-hidden={index >= STACK_ROWS.length ? "true" : undefined}>
+						{FALLBACK[slug] ? (
+							<span class="col-start-2 row-start-2 grid place-items-center text-lemon"><Icon name={FALLBACK[slug]} size={22} /></span>
+						) : (
+							<span class="ico col-start-2 row-start-2 text-lemon" style={`--ico:url(/icons/${slug}.svg); --ico-size:1.5rem`}></span>
+						)}
+						<span class="col-start-4 row-start-2 text-[0.95rem] font-semibold">{name}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+		<div class="marquee marquee--reverse marquee-fade row-start-3">
+			<ul class="marquee__track" style={`--marquee-duration:65s; grid-template-columns:${columns(rowTwo.length)}`}>
+				{rowTwo.map(([slug, name], index) => (
+					<li class="grid grid-cols-[1.1rem_1.5rem_0.6rem_auto_1.25rem] grid-rows-[0.85rem_auto_0.85rem] items-center rounded-full bg-white/[0.05] ring-1 ring-white/10" style={`grid-column:${index * 2 + 1}`} aria-hidden={index >= STACK_ROWS_2.length ? "true" : undefined}>
+						{FALLBACK[slug] ? (
+							<span class="col-start-2 row-start-2 grid place-items-center text-white/85"><Icon name={FALLBACK[slug]} size={22} /></span>
+						) : (
+							<span class="ico col-start-2 row-start-2 text-white/85" style={`--ico:url(/icons/${slug}.svg); --ico-size:1.5rem`}></span>
+						)}
+						<span class="col-start-4 row-start-2 text-[0.95rem] font-semibold">{name}</span>
+					</li>
+				))}
+			</ul>
+		</div>
+	</div>
+
+	<!-- What lives in each layer -->
+	<ul class="col-start-2 row-start-6 grid grid-rows-[auto_1rem_auto_1rem_auto_1rem_auto_1rem_auto_1rem_auto] md:grid-cols-[1fr_1.25rem_1fr] md:grid-rows-[auto_1.25rem_auto_1.25rem_auto] lg:grid-cols-[1fr_1.25rem_1fr_1.25rem_1fr] lg:grid-rows-[auto_1.25rem_auto]">
+		{STACK_GROUPS.map((group, index) => {
+			const mobile = ["row-start-1", "row-start-3", "row-start-5", "row-start-7", "row-start-9", "row-start-11"][index];
+			const tablet = ["md:col-start-1 md:row-start-1", "md:col-start-3 md:row-start-1", "md:col-start-1 md:row-start-3", "md:col-start-3 md:row-start-3", "md:col-start-1 md:row-start-5", "md:col-start-3 md:row-start-5"][index];
+			const desktop = ["lg:col-start-1 lg:row-start-1", "lg:col-start-3 lg:row-start-1", "lg:col-start-5 lg:row-start-1", "lg:col-start-1 lg:row-start-3", "lg:col-start-3 lg:row-start-3", "lg:col-start-5 lg:row-start-3"][index];
+			return (
+				<li class:list={["card-spot lift grid content-start rounded-[22px] bg-white/[0.04] ring-1 ring-white/10 grid-cols-[1.5rem_1fr_1.5rem] grid-rows-[1.4rem_auto_0.9rem_auto_0.6rem_auto_1.5rem]", mobile, tablet, desktop]} data-reveal data-spot style={`--d:${(index % 3) * 0.08}s`}>
+					<p class="col-start-2 row-start-2 grid grid-cols-[auto_1fr_auto] items-center">
+						<span class="col-start-1 font-display text-[1.1rem] text-lemon">0{index + 1}</span>
+						<span class="col-start-3 grid h-10 w-10 place-items-center rounded-xl bg-lemon/10 text-lemon ring-1 ring-lemon/20"><Icon name={GROUP_ICONS[index]} size={19} /></span>
+					</p>
+					<h3 class="col-start-2 row-start-4 text-[1.2rem] font-extrabold">{group.title}</h3>
+					<p class="col-start-2 row-start-6 text-[0.9rem] leading-relaxed text-white/65">{group.items}</p>
+				</li>
+			);
+		})}
+	</ul>
+</section>

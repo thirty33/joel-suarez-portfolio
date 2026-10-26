@@ -1,0 +1,191 @@
+---
+import Icon from "../Icon.astro";
+import SectionHeading from "./SectionHeading.astro";
+
+const PAYMENTS = ["Webpay", "Klap", "Flow", "Mercado Pago", "Wompi", "PSE", "Nequi", "Stripe", "Pago Móvil", "Binance", "Zelle", "PayU"];
+const firstRow = [...PAYMENTS.slice(0, 6), ...PAYMENTS.slice(0, 6)];
+const secondRow = [...PAYMENTS.slice(6), ...PAYMENTS.slice(6)];
+const pillColumns = (count: number) => Array.from({ length: count }, () => "auto 0.55rem").join(" ");
+
+/** What an internal agent decides on its own, shown as a live log. */
+const AGENT_LOG = [
+	{ event: "Lead nuevo desde Meta", decision: "Lo califica como cafetería y avisa a la asesora", tone: "bg-mint/15 text-mint", tag: "decidió" },
+	{ event: "Pedido sin pagar a las 15:30", decision: "Reenvía el link de pago por WhatsApp", tone: "bg-sky/15 text-sky", tag: "actuó" },
+	{ event: "Stock de pollo bajo el mínimo", decision: "Propone una orden de producción", tone: "bg-lemon/15 text-lemon", tag: "propuso" },
+	{ event: "Cliente pide hablar con alguien", decision: "Silencia el bot y pasa el chat a una persona", tone: "bg-coral/15 text-coral", tag: "escaló" },
+];
+
+/** How a site gets to the first positions, in execution terms. */
+const SEO_STEPS = [
+	"Investigo las búsquedas con intención de compra de tu nicho y a quién le estás perdiendo clics.",
+	"Dejo impecable el SEO técnico: velocidad, Core Web Vitals, indexación, sitemap y datos estructurados.",
+	"Construyo una página por servicio, ciudad y país, con contenido que responde las dudas reales de tus clientes.",
+	"Trabajo el SEO local: ficha de Google Business, reseñas y directorios de tu sector.",
+	"Mido cada semana en Search Console y GA4 y ajusto lo que no rinde.",
+	"Conecto las visitas con las ventas: formularios, WhatsApp y pedidos medidos.",
+];
+
+const CLOUD_POINTS = ["AWS: EC2, RDS, SQS, S3, CloudFront y Lambda", "CloudFormation y despliegue continuo", "DDD, arquitectura hexagonal y pruebas"];
+
+/** The inner grid every service card shares: margins and spaces are tracks. */
+const CARD = "card-spot lift grid rounded-[26px] grid-cols-[1.6rem_minmax(0,1fr)_1.6rem] grid-rows-[1.6rem_auto_1.1rem_auto_0.7rem_auto_0.9rem_auto_1.4rem_1fr_1.6rem] lg:grid-cols-[2rem_minmax(0,1fr)_2rem] lg:grid-rows-[2rem_auto_1.2rem_auto_0.75rem_auto_0.9rem_auto_1.5rem_1fr_2rem]";
+---
+
+<section id="servicios" class="relative overflow-hidden bg-paper text-ink shell grid-rows-[5rem_auto_3rem_auto_6rem] lg:grid-rows-[8rem_auto_4.5rem_auto_9rem]" aria-labelledby="servicios-title" data-motion data-theme="light">
+	<div class="col-start-2 row-start-2">
+		<SectionHeading number="01" label="Servicios" ghost="Servicios" id="servicios-title">
+			<Fragment slot="title">¿Cómo te puedo <span class="hl">ayudar?</span></Fragment>
+			Desarrollo el software que se adapta a tu operación, no al revés. Estas son las piezas que más piden las empresas con las que trabajo.
+		</SectionHeading>
+	</div>
+
+	<div class="col-start-2 row-start-4 grid grid-rows-[auto_1.25rem_auto_1.25rem_auto]">
+		<!-- Row 1: AI + WhatsApp · Payments -->
+		<div class="row-start-1 grid grid-rows-[auto_1.25rem_auto] lg:grid-cols-[7fr_1.25rem_5fr] lg:grid-rows-1">
+			<article class:list={[CARD, "row-start-1 bg-ink text-white lg:col-start-1"]} style="--spot:rgba(242,233,109,.14)" data-reveal data-spot>
+				<span class="col-start-2 row-start-2 grid h-12 w-12 place-items-center rounded-2xl bg-lemon text-ink"><Icon name="bot" size={24} /></span>
+				<h3 class="display col-start-2 row-start-4 text-[2.1rem] lg:text-[2.6rem]">Agentes de IA para WhatsApp</h3>
+				<p class="col-start-2 row-start-6 max-w-[34rem] text-[0.98rem] leading-relaxed text-white/75">
+					Un asistente que responde, entiende qué pide cada cliente y deja el pedido o el reclamo en tu sistema, con tu equipo al lado para tomar la conversación.
+				</p>
+				<p class="col-start-2 row-start-8 text-[0.78rem] font-semibold text-lemon/90">WhatsApp Cloud API · laravel/ai · CRM · recordatorios</p>
+				<div class="col-start-2 row-start-10 grid grid-cols-[minmax(0,1fr)] content-end lg:grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,16rem)] lg:items-end">
+					<div class="float grid rounded-[20px] bg-white/[0.06] ring-1 ring-white/10 grid-cols-[0.9rem_1fr_0.9rem] grid-rows-[0.9rem_auto_0.5rem_auto_0.5rem_auto_0.9rem]" style="--float-duration:7s; --tilt-from:0deg; --tilt-to:0deg">
+						<p class="bubble bubble--in col-start-2 row-start-2 text-[0.78rem]">¿Tienen despacho a Ñuñoa este viernes?</p>
+						<p class="chip chip-ic col-start-2 row-start-4 bg-lemon text-ink">
+							<Icon name="sparkle" size={13} />
+							<span>IA: consulta de despacho · cliente frecuente</span>
+						</p>
+						<p class="bubble bubble--out col-start-2 row-start-6 text-[0.78rem]">¡Sí! 🙌 Despachamos de lunes a viernes. ¿Te armo el pedido de siempre?</p>
+					</div>
+					<div class="hidden lg:col-start-3 lg:grid lg:grid-rows-[auto_0.6rem_auto_0.6rem_auto]">
+						<p class="chip chip-ic row-start-1 bg-white/10 text-white/85"><span class="h-2 w-2 rounded-full bg-mint"></span><span>Bandeja compartida</span></p>
+						<p class="chip chip-ic row-start-3 bg-white/10 text-white/85"><span class="h-2 w-2 rounded-full bg-lemon"></span><span>Clasificación automática</span></p>
+						<p class="chip chip-ic row-start-5 bg-white/10 text-white/85"><span class="h-2 w-2 rounded-full bg-sky"></span><span>El asesor toma el control</span></p>
+					</div>
+				</div>
+			</article>
+
+			<article class:list={[CARD, "row-start-3 bg-lemon text-ink lg:col-start-3 lg:row-start-1"]} style="--spot:rgba(255,255,255,.5)" data-reveal data-spot>
+				<span class="col-start-2 row-start-2 grid h-12 w-12 place-items-center rounded-2xl bg-ink text-lemon"><Icon name="card" size={24} /></span>
+				<h3 class="display col-start-2 row-start-4 text-[2.1rem] lg:text-[2.6rem]">Pagos en línea que cuadran</h3>
+				<p class="col-start-2 row-start-6 text-[0.98rem] font-medium leading-relaxed text-ink/75">
+					Conecto la pasarela de tu país con tus pedidos: links de pago, reintentos, reembolsos y conciliación automática.
+				</p>
+				<p class="col-start-2 row-start-8 text-[0.78rem] font-bold text-ink/70">Ya integré Klap, Stripe, Authorize.net y Binance</p>
+				<div class="col-start-1 col-span-3 row-start-10 grid content-end grid-rows-[auto_0.55rem_auto]">
+					<div class="marquee marquee-fade row-start-1">
+						<div class="marquee__track" style={`--marquee-duration:26s; grid-template-columns:${pillColumns(firstRow.length)}`}>
+							{firstRow.map((name, index) => <span class="chip bg-ink text-[0.8rem] text-white" style={`grid-column:${index * 2 + 1}`}>{name}</span>)}
+						</div>
+					</div>
+					<div class="marquee marquee--reverse marquee-fade row-start-3">
+						<div class="marquee__track" style={`--marquee-duration:30s; grid-template-columns:${pillColumns(secondRow.length)}`}>
+							{secondRow.map((name, index) => <span class="chip bg-white text-[0.8rem] text-ink" style={`grid-column:${index * 2 + 1}`}>{name}</span>)}
+						</div>
+					</div>
+				</div>
+			</article>
+		</div>
+
+
+		<!-- Row 2: Agentic systems · SEO -->
+		<div class="row-start-3 grid grid-rows-[auto_1.25rem_auto] lg:grid-cols-[5fr_1.25rem_7fr] lg:grid-rows-1">
+			<article class:list={[CARD, "row-start-1 bg-navy text-white lg:col-start-1"]} style="--spot:rgba(124,196,255,.16)" data-reveal data-spot>
+				<span class="col-start-2 row-start-2 grid h-12 w-12 place-items-center rounded-2xl bg-lemon text-ink"><Icon name="workflow" size={24} /></span>
+				<h3 class="display col-start-2 row-start-4 text-[2.1rem] lg:text-[2.6rem]">Sistemas agénticos</h3>
+				<p class="col-start-2 row-start-6 text-[0.98rem] leading-relaxed text-white/75">
+					Agentes de IA dentro de tu software que conocen tus procesos, tus reglas y tus datos. Revisan pedidos, cobros, inventario o conversaciones, deciden con tu criterio y te avisan cuando algo necesita a una persona.
+				</p>
+				<p class="col-start-2 row-start-8 text-[0.78rem] font-semibold text-lemon/90">Agentes con herramientas · MCP · DeepSeek, MiniMax, OpenAI y Anthropic</p>
+				<ol class="agent-log col-start-2 row-start-10 grid content-end rounded-[20px] bg-ink/45 ring-1 ring-white/10 grid-cols-[0.9rem_minmax(0,1fr)_0.9rem]" style={`grid-template-rows:0.9rem ${AGENT_LOG.map(() => "auto").join(" 0.6rem ")} 0.9rem`} aria-label="Ejemplos de decisiones de un agente">
+					{AGENT_LOG.map((entry, index) => (
+						<li class="agent-log__line col-start-2 grid grid-cols-[5.4rem_0.6rem_minmax(0,1fr)] grid-rows-[auto_0.15rem_auto] items-center" style={`grid-row:${index * 2 + 2}; --d:${index * 1.6}s`}>
+							<span class:list={["chip col-start-1 row-span-3 row-start-1 self-center text-[0.62rem] uppercase tracking-[0.08em]", entry.tone]}>{entry.tag}</span>
+							<span class="col-start-3 row-start-1 truncate text-[0.74rem] font-bold text-white">{entry.event}</span>
+							<span class="col-start-3 row-start-3 truncate text-[0.7rem] text-white/60">{entry.decision}</span>
+						</li>
+					))}
+				</ol>
+			</article>
+
+			<article class:list={[CARD, "row-start-3 bg-white text-ink lg:col-start-3 lg:row-start-1"]} data-reveal data-spot style="--d:.08s">
+				<span class="col-start-2 row-start-2 grid h-12 w-12 place-items-center rounded-2xl bg-ink text-lemon"><Icon name="search" size={22} /></span>
+				<h3 class="display col-start-2 row-start-4 text-[2.1rem] lg:text-[2.6rem]">Posiciono tu web en Google</h3>
+				<p class="col-start-2 row-start-6 max-w-[40rem] text-[0.98rem] leading-relaxed text-ink/75">
+					Llevo tu web a las primeras posiciones de tu nicho con un plan que se ejecuta y se mide, no con promesas: cada paso apunta a que te encuentre quien ya está buscando comprar.
+				</p>
+				<p class="col-start-2 row-start-8 text-[0.78rem] font-semibold text-ink/55">En Delicius: +194 % de clics orgánicos en dos semanas y los primeros leads de empresas por el formulario</p>
+				<div class="col-start-2 row-start-10 grid grid-rows-[auto_1.25rem_auto] content-end lg:grid-cols-[minmax(0,1fr)_1.5rem_minmax(0,12rem)] lg:grid-rows-1 lg:items-end">
+					<ol class="row-start-1 grid" style={`grid-template-rows:${SEO_STEPS.map(() => "auto").join(" 0.55rem ")}`}>
+						{SEO_STEPS.map((step, index) => (
+							<li class="grid grid-cols-[1.5rem_0.6rem_minmax(0,1fr)] items-start text-[0.86rem] leading-snug text-ink/80" style={`grid-row:${index * 2 + 1}`}>
+								<span class="col-start-1 grid h-6 w-6 place-items-center rounded-full bg-lemon font-display text-[0.8rem] text-ink">{index + 1}</span>
+								<span class="col-start-3">{step}</span>
+							</li>
+						))}
+					</ol>
+					<div class="row-start-3 grid grid-rows-[auto_0.25rem_auto_0.6rem_auto] lg:col-start-3 lg:row-start-1">
+						<span class="row-start-1 font-display text-[2.6rem] leading-none">+194%</span>
+						<span class="row-start-3 text-[0.7rem] font-semibold text-ink/55">clics orgánicos (Search Console)</span>
+						<svg class="row-start-5 h-[5rem] w-full" viewBox="0 0 200 90" preserveAspectRatio="none" aria-hidden="true">
+							<path d="M0 82 C25 80 40 76 60 72 S95 66 110 52 S145 40 160 28 S185 10 200 6 L200 90 L0 90Z" fill="#f2e96d" opacity=".7" />
+							<path d="M0 82 C25 80 40 76 60 72 S95 66 110 52 S145 40 160 28 S185 10 200 6" fill="none" stroke="#050c17" stroke-width="3" stroke-linecap="round" />
+							<circle class="pulse" cx="200" cy="6" r="5" fill="#050c17" />
+						</svg>
+					</div>
+				</div>
+			</article>
+		</div>
+
+		<!-- Row 3: ERP · Custom software · Cloud -->
+		<div class="row-start-5 grid grid-rows-[auto_1.25rem_auto_1.25rem_auto] lg:grid-cols-[1fr_1.25rem_1fr_1.25rem_1fr] lg:grid-rows-1">
+			<article class:list={[CARD, "row-start-1 bg-white text-ink lg:col-start-1"]} data-reveal data-spot style="--d:.05s">
+				<span class="col-start-2 row-start-2 grid h-12 w-12 place-items-center rounded-2xl bg-ink text-lemon"><Icon name="sync" size={22} /></span>
+				<h3 class="display col-start-2 row-start-4 text-[1.9rem]">Integraciones con tu ERP</h3>
+				<p class="col-start-2 row-start-6 text-[0.95rem] leading-relaxed text-ink/70">Ventas, facturas e inventario sincronizados con Defontana, Bsale, Siigo o Alegra. Sin copiar a mano.</p>
+				<p class="col-start-2 row-start-8 text-[0.78rem] font-semibold text-ink/55">APIs · colas · webhooks</p>
+				<svg class="col-start-2 row-start-10 h-[7.5rem] w-full self-end" viewBox="0 0 320 120" aria-hidden="true">
+					<rect x="6" y="34" width="104" height="52" rx="14" fill="#050c17" />
+					<text x="58" y="65" text-anchor="middle" fill="#f2e96d" font-family="Anton, sans-serif" font-size="16">TU SISTEMA</text>
+					<rect x="210" y="34" width="104" height="52" rx="14" fill="#f2e96d" />
+					<text x="262" y="65" text-anchor="middle" fill="#050c17" font-family="Anton, sans-serif" font-size="18">ERP</text>
+					<path class="dash-run" d="M110 52 C150 30 170 30 210 52" fill="none" stroke="#050c17" stroke-width="2.5" stroke-linecap="round" />
+					<path class="dash-run" d="M210 70 C170 92 150 92 110 70" fill="none" stroke="#5b6576" stroke-width="2.5" stroke-linecap="round" />
+					<text x="160" y="26" text-anchor="middle" fill="#5b6576" font-family="Montserrat, sans-serif" font-size="11" font-weight="700">ventas → facturas</text>
+					<text x="160" y="108" text-anchor="middle" fill="#5b6576" font-family="Montserrat, sans-serif" font-size="11" font-weight="700">← stock y estados</text>
+				</svg>
+			</article>
+
+			<article class:list={[CARD, "row-start-3 bg-ink-2 text-white lg:col-start-3 lg:row-start-1"]} data-reveal data-spot style="--d:.12s">
+				<span class="col-start-2 row-start-2 grid h-12 w-12 place-items-center rounded-2xl bg-lemon text-ink"><Icon name="dashboard" size={22} /></span>
+				<h3 class="display col-start-2 row-start-4 text-[1.9rem]">Software a medida</h3>
+				<p class="col-start-2 row-start-6 text-[0.95rem] leading-relaxed text-white/72">Pedidos B2B, inventario, producción, reportes y paneles: el sistema que tu operación necesita, no uno genérico.</p>
+				<p class="col-start-2 row-start-8 text-[0.78rem] font-semibold text-lemon/85">Laravel · React · Filament</p>
+				<div class="col-start-2 row-start-10 grid h-[7.5rem] grid-rows-[auto_0.6rem_1fr] self-end">
+					<p class="row-start-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-white/50">Pedidos por sucursal</p>
+					<div class="bars-live row-start-3" style="grid-template-columns:1fr 0.5rem 1fr 0.5rem 1fr 0.5rem 1fr 0.5rem 1fr 0.5rem 1fr 0.5rem 1fr">
+						{[0.55, 0.8, 0.45, 0.95, 0.7, 0.6, 0.85].map((to, index) => (
+							<span style={`grid-column:${index * 2 + 1}; --to:${to}; --from:${(to * 0.55).toFixed(2)}; --d:${(index * -0.37).toFixed(2)}s; ${index === 3 ? "" : "--bar:rgba(255,255,255,.22)"}`}></span>
+						))}
+					</div>
+				</div>
+			</article>
+
+			<article class:list={[CARD, "row-start-5 bg-lemon text-ink lg:col-start-5 lg:row-start-1"]} style="--spot:rgba(255,255,255,.5); --d:.19s" data-reveal data-spot>
+				<span class="col-start-2 row-start-2 grid h-12 w-12 place-items-center rounded-2xl bg-ink text-lemon"><Icon name="cloud" size={22} /></span>
+				<h3 class="display col-start-2 row-start-4 text-[1.9rem]">Nube y arquitectura</h3>
+				<p class="col-start-2 row-start-6 text-[0.95rem] font-medium leading-relaxed text-ink/75">Tu sistema en AWS con despliegue automático, arquitectura por capas y pruebas: crece sin tener que rehacerlo.</p>
+				<p class="col-start-2 row-start-8 text-[0.78rem] font-bold text-ink/65">248 pruebas en verde antes de cada despliegue</p>
+				<ul class="col-start-2 row-start-10 grid content-end" style="grid-template-rows:auto 0.55rem auto 0.55rem auto">
+					{CLOUD_POINTS.map((point, index) => (
+						<li class="grid grid-cols-[1.4rem_0.6rem_1fr] items-start text-[0.86rem] font-medium text-ink/85" style={`grid-row:${index * 2 + 1}`}>
+							<span class="col-start-1 grid h-[1.4rem] w-[1.4rem] place-items-center rounded-full bg-ink text-lemon"><Icon name="check" size={13} stroke={3} /></span>
+							<span class="col-start-3">{point}</span>
+						</li>
+					))}
+				</ul>
+			</article>
+		</div>
+	</div>
+</section>

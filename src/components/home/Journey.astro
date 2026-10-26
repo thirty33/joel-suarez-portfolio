@@ -1,0 +1,109 @@
+---
+import Flag from "../Flag.astro";
+import SectionHeading from "./SectionHeading.astro";
+import { EDUCATION, JOURNEY, TESTIMONIALS } from "../../data/home";
+import Icon from "../Icon.astro";
+import { at, tracks } from "../../lib/grid";
+
+const BADGE_TEXT = "Arquitecto de software · desde 2017 · ";
+const QUOTE_PLACE = ["row-start-1 lg:col-start-1", "row-start-3 lg:col-start-3 lg:row-start-1", "row-start-5 lg:col-start-5 lg:row-start-1"];
+---
+
+<section id="trayectoria" class="relative overflow-clip bg-paper text-ink shell grid-rows-[5rem_auto_3rem_auto_4rem_auto_6rem] lg:grid-rows-[8rem_auto_4.5rem_auto_6rem_auto_9rem]" aria-labelledby="trayectoria-title" data-motion data-theme="light">
+	<div class="col-start-2 row-start-2">
+		<SectionHeading number="05" label="Trayectoria" ghost="Trayectoria" id="trayectoria-title">
+			<Fragment slot="title">Nueve años <span class="hl">en producción</span></Fragment>
+			Equipos en Colombia, Estados Unidos, Francia y Chile, y clientes en el resto del mundo. Siempre en sistemas que la gente usa todos los días, con usuarios y dinero reales.
+		</SectionHeading>
+	</div>
+
+	<div class="col-start-2 row-start-4 grid grid-rows-[auto_3.5rem_auto] lg:grid-cols-[minmax(0,24rem)_5rem_minmax(0,1fr)] lg:grid-rows-1">
+		<!-- Joel, sticky beside the timeline on desktop -->
+		<figure class="relative row-start-1 grid max-w-[26rem] lg:sticky lg:top-24 lg:col-start-1 lg:row-start-1 lg:self-start" data-reveal="zoom">
+			<div class="relative grid overflow-hidden rounded-[30px] bg-cloud shadow-[0_50px_90px_-50px_rgba(5,12,23,.7)]">
+				<img
+					src="/images/joel/portrait-arms.webp"
+					srcset="/images/joel/portrait-arms-600.webp 600w, /images/joel/portrait-arms.webp 900w"
+					sizes="(min-width: 1024px) 24rem, 90vw"
+					width="900"
+					height="1450"
+					alt="Joel Suárez con los brazos cruzados en su estudio"
+					loading="lazy"
+					decoding="async"
+					class="col-start-1 row-start-1 aspect-[4/5] w-full object-cover object-[50%_18%] lg:aspect-auto lg:h-[min(30rem,calc(100svh-8rem))]"
+				/>
+				<div class="col-start-1 row-start-1 bg-[linear-gradient(180deg,rgba(5,12,23,0)_45%,rgba(5,12,23,.88)_100%)]" aria-hidden="true"></div>
+				<figcaption class="col-start-1 row-start-1 grid grid-cols-[1.4rem_1fr_1.4rem] grid-rows-[1fr_auto_0.35rem_auto_0.9rem_auto_1.4rem] text-white">
+					<span class="col-start-2 row-start-2 text-[1.35rem] font-extrabold">Joel Suárez</span>
+					<span class="col-start-2 row-start-4 text-[0.85rem] text-white/75">Arquitecto de software · IA aplicada</span>
+					<span class="col-start-2 row-start-6 grid grid-cols-[auto_0.45rem_auto_0.45rem_auto] justify-start">
+						<span class="chip col-start-1 bg-lemon text-ink">Laravel</span>
+						<span class="chip col-start-3 bg-white/15 text-white backdrop-blur">React</span>
+						<span class="chip col-start-5 bg-white/15 text-white backdrop-blur">AWS</span>
+					</span>
+				</figcaption>
+			</div>
+
+			<!-- Spinning badge on the corner -->
+			<span class="absolute -right-3 -top-6 grid h-[7.5rem] w-[7.5rem] place-items-center rounded-full bg-ink text-lemon shadow-[0_20px_40px_-18px_rgba(5,12,23,.8)] lg:-right-10" aria-hidden="true">
+				<svg class="spin col-start-1 row-start-1 h-full w-full" viewBox="0 0 100 100">
+					<defs><path id="badge-circle" d="M50,50 m-37,0 a37,37 0 1,1 74,0 a37,37 0 1,1 -74,0" /></defs>
+					<text font-family="Montserrat, sans-serif" font-size="8.4" font-weight="800" letter-spacing="1.2" fill="currentColor">
+						<textPath href="#badge-circle" textLength="230" lengthAdjust="spacing">{BADGE_TEXT.toUpperCase()}</textPath>
+					</text>
+				</svg>
+				<span class="col-start-1 row-start-1 font-display text-[1.9rem] leading-none">9+</span>
+			</span>
+		</figure>
+
+		<!-- Timeline on a rail that fills while you read, and the training underneath -->
+		<div class="row-start-3 grid grid-rows-[auto_2.5rem_auto] lg:col-start-3 lg:row-start-1">
+		<div class="row-start-1 grid grid-cols-[1.5rem_1.25rem_minmax(0,1fr)]" style={`grid-template-rows:${tracks(JOURNEY.length, "auto", "2.25rem")}`} data-process>
+			<span class="rail col-start-1 justify-self-center" style="grid-row:1 / -1" aria-hidden="true"><span data-process-fill></span></span>
+			<ol class="col-span-3 col-start-1 grid grid-cols-subgrid grid-rows-subgrid" style="grid-row:1 / -1">
+				{JOURNEY.map((item, index) => (
+					<li class="col-span-3 col-start-1 grid grid-cols-subgrid grid-rows-[0.45rem_auto]" style={`grid-row:${at(index)}`} data-process-step>
+						<span class="tl-dot relative z-10 col-start-1 row-start-2 justify-self-center" aria-hidden="true"></span>
+						<div class="col-start-3 row-span-2 row-start-1 grid grid-rows-[auto_0.65rem_auto_0.3rem_auto_0.6rem_auto]" data-reveal style={`--d:${Math.min(index, 3) * 0.06}s`}>
+							<p class="row-start-1 grid grid-cols-[auto_0.75rem_auto_0.6rem_auto] items-center justify-start">
+								<span class="col-start-1 font-display text-[1.45rem] leading-none lg:text-[1.65rem]">{item.years}</span>
+								<span class="chip chip-ic col-start-3 bg-white text-ink ring-1 ring-ink/10">
+									<Flag code={item.flag} class="h-[0.75rem] w-[1.125rem]" />
+									<span>{item.place}</span>
+								</span>
+								{index === 0 && <span class="chip col-start-5 bg-ink text-lemon">Actual</span>}
+							</p>
+							<h3 class="row-start-3 text-[1.3rem] font-extrabold leading-tight lg:text-[1.45rem]">{item.company}</h3>
+							<p class="row-start-5 text-[0.74rem] font-bold uppercase tracking-[0.16em] text-ink/50">{item.role}</p>
+							<p class="row-start-7 max-w-[36rem] text-[0.96rem] leading-relaxed text-ink/70">{item.text}</p>
+						</div>
+					</li>
+				))}
+			</ol>
+		</div>
+		<p class="row-start-3 grid rounded-[22px] bg-white ring-1 ring-ink/10 grid-cols-[1.25rem_2.6rem_0.9rem_minmax(0,1fr)_1.25rem] grid-rows-[1.1rem_auto_0.3rem_auto_1.1rem] items-center" data-reveal>
+			<span class="col-start-2 row-span-3 row-start-2 grid h-[2.6rem] w-[2.6rem] place-items-center rounded-full bg-ink text-lemon"><Icon name="graduation" size={20} /></span>
+			<span class="col-start-4 row-start-2 text-[0.95rem] font-extrabold">{EDUCATION.school} · {EDUCATION.years}</span>
+			<span class="col-start-4 row-start-4 text-[0.86rem] leading-snug text-ink/70">{EDUCATION.text}</span>
+		</p>
+		</div>
+	</div>
+
+	<!-- What people who worked with Joel say (public LinkedIn recommendations) -->
+	<div class="col-start-2 row-start-6 grid grid-rows-[auto_1.25rem_auto]">
+		<p class="eyebrow row-start-1 grid grid-cols-[auto_0.6rem_auto] items-center justify-start text-ink/60" data-reveal>
+			<Icon name="quote" size={16} />
+			<span class="col-start-3">Lo que dicen quienes trabajaron conmigo</span>
+		</p>
+		<ul class="row-start-3 grid grid-rows-[auto_1.25rem_auto_1.25rem_auto] lg:grid-cols-[1fr_1.25rem_1fr_1.25rem_1fr] lg:grid-rows-1">
+			{TESTIMONIALS.map((testimonial, index) => (
+				<li class:list={["card-spot lift grid content-start rounded-[24px] bg-white ring-1 ring-ink/10 grid-cols-[1.5rem_minmax(0,1fr)_1.5rem] grid-rows-[1.5rem_auto_1rem_auto_1.25rem_auto_0.2rem_auto_1.5rem]", QUOTE_PLACE[index]]} data-reveal data-spot style={`--d:${index * 0.08}s`}>
+					<span class="col-start-2 row-start-2 text-lemon-3"><Icon name="quote" size={26} /></span>
+					<blockquote class="col-start-2 row-start-4 text-[0.98rem] italic leading-relaxed text-ink/85">“{testimonial.quote}”</blockquote>
+					<span class="col-start-2 row-start-6 text-[0.92rem] font-extrabold">{testimonial.name}</span>
+					<span class="col-start-2 row-start-8 text-[0.78rem] font-semibold text-ink/55">{testimonial.role}</span>
+				</li>
+			))}
+		</ul>
+	</div>
+</section>

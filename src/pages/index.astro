@@ -1,17 +1,43 @@
 ---
-
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/home/Header.astro";
+import SectionIndex from "../components/home/SectionIndex.astro";
+import Hero from "../components/home/Hero.astro";
+import Tape from "../components/home/Tape.astro";
+import FilmSection from "../components/home/FilmSection.astro";
+import Metrics from "../components/home/Metrics.astro";
+import Services from "../components/home/Services.astro";
+import Cases from "../components/home/Cases.astro";
+import Process from "../components/home/Process.astro";
+import Stack from "../components/home/Stack.astro";
+import Journey from "../components/home/Journey.astro";
+import Countries from "../components/home/Countries.astro";
+import Contact from "../components/home/Contact.astro";
+import Footer from "../components/home/Footer.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout
+	title="Joel Suárez · Arquitecto de software: agentes de IA, WhatsApp, pagos e integraciones"
+	description="Arquitecto de software: escucho cómo trabaja tu negocio y construyo agentes de IA para WhatsApp, sistemas agénticos, pagos en línea, integraciones con tu ERP y tiendas que venden. Proyectos en Chile, Colombia, EE. UU., Francia y el resto del mundo."
+>
+	<Header />
+	<SectionIndex />
+	<main id="contenido">
+		<Hero />
+		<Tape />
+		<FilmSection />
+		<Metrics />
+		<Services />
+		<Cases />
+		<Process />
+		<Stack />
+		<Journey />
+		<Countries />
+		<Contact />
+	</main>
+	<Footer />
+</BaseLayout>
+
+<script>
+	import "../scripts/home";
+</script>

@@ -1,8 +1,27 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  Infraestructura para joel-suarez-portfolio: 2 S3 buckets (site + assets),
-  distribución CloudFront con signed URLs para assets, IAM user de deploy.
-  Sin dominio — acceso vía URL de CloudFront.
+  Infraestructura para joel-suarez-portfolio: bucket S3 privado con el sitio
+  estático, distribución CloudFront (OAC) con dominio propio, certificado ACM,
+  registros Route 53, WAF con límite por IP y plan Free de tarifa plana.
+
+# ==============================================================================
+# CONTRATO DE ACTUALIZACIÓN (leer antes de editar)
+#
+# 1. Desplegar SIEMPRE en us-east-1 (CloudFront solo acepta certificados ACM de
+#    esa región y el WAF de alcance CLOUDFRONT solo existe ahí) con:
+#      aws cloudformation deploy --stack-name joel-portfolio-prod \
+#        --template-file infrastructure/cloudformation.yml \
+#        --no-fail-on-empty-changeset --parameter-overrides ...
+#    Antes de un cambio grande, previsualizar con --no-execute-changeset.
+# 2. No renombrar los logical IDs (SiteBucket, CloudFrontDistribution...):
+#    CloudFormation lo toma como borrar el recurso viejo y crear uno nuevo.
+# 3. Cambiar un nombre explícito (bucket, OAC, función, WAF) o el dominio del
+#    certificado fuerza un REEMPLAZO del recurso.
+# 4. La zona hospedada NO es parte del stack: la crea el registro del dominio
+#    en Route 53 y entra como parámetro. Borrar el stack no toca el dominio.
+# 5. El plan de tarifa plana no se puede cambiar de tier con un update: se
+#    cambia desde la consola de CloudFront o con la API de PricingPlanManager.
+# ==============================================================================
 
 # ==============================================================================
 # PARAMETERS
@@ -12,9 +31,19 @@ Parameters:
     Type: String
     Description: Nombre del bucket S3 para el sitio (debe ser único globalmente)
 
-  AssetsBucketName:
+  DomainName:
     Type: String
-    Description: Nombre del bucket S3 para assets (debe ser único globalmente)
+    Description: Dominio principal, sin www (www redirige a este con 301)
+
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: ID de la zona hospedada del dominio (la creó el registro en Route 53)
+
+  RateLimitPerIp:
+    Type: Number
+    Default: 1000
+    MinValue: 100
+    Description: Peticiones máximas por IP cada 5 minutos antes de bloquearla (una visita hace ~50)
 
   Environment:
     Type: String
@@ -24,26 +53,37 @@ Parameters:
       - staging
       - prod
 
-  DeployUserName:
-    Type: String
-    Description: Nombre del usuario IAM de deploy
-
-  AssetsPublicKeyEncoded:
-    Type: String
-    Description: Clave pública RSA (PEM) para firmar URLs de assets
-
 # ==============================================================================
 # RESOURCES
 # ==============================================================================
 Resources:
 
   # ----------------------------------------------------------------------------
-  # S3 BUCKET - Sitio estático (dist/)
+  # ACM CERTIFICATE - dominio + www, validado por DNS en la zona del dominio
+  # ----------------------------------------------------------------------------
+  SSLCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Sub 'www.${DomainName}'
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+        - DomainName: !Sub 'www.${DomainName}'
+          HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: joel-suarez-portfolio
+
+  # ----------------------------------------------------------------------------
+  # S3 BUCKET - Sitio estático (dist/: HTML, CSS, JS, imágenes, íconos, fuentes)
   # ----------------------------------------------------------------------------
   SiteBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       BucketName: !Ref SiteBucketName
       PublicAccessBlockConfiguration:
@@ -63,7 +103,7 @@ Resources:
           Value: joel-suarez-portfolio
 
   # ----------------------------------------------------------------------------
-  # S3 BUCKET POLICY - Sitio: CloudFront OAC + IAM user
+  # S3 BUCKET POLICY - Sitio: solo lo lee la distribución CloudFront (OAC)
   # ----------------------------------------------------------------------------
   SiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -81,103 +121,24 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
-          - Sid: AllowDeployUserAccess
-            Effect: Allow
-            Principal:
-              AWS: !GetAtt DeployUser.Arn
-            Action:
-              - s3:ListBucket
-              - s3:GetObject
-              - s3:PutObject
-              - s3:DeleteObject
-            Resource:
-              - !GetAtt SiteBucket.Arn
-              - !Sub '${SiteBucket.Arn}/*'
-
-  # ----------------------------------------------------------------------------
-  # S3 BUCKET - Assets (imágenes, fuentes, SVGs)
-  # ----------------------------------------------------------------------------
-  AssetsBucket:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      BucketName: !Ref AssetsBucketName
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        IgnorePublicAcls: true
-        BlockPublicPolicy: true
-        RestrictPublicBuckets: true
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-            BucketKeyEnabled: true
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Project
-          Value: joel-suarez-portfolio
-
-  # ----------------------------------------------------------------------------
-  # S3 BUCKET POLICY - Assets: Deny directo + CloudFront OAC + IAM user
-  # ----------------------------------------------------------------------------
-  AssetsBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref AssetsBucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: DenyDirectPublicAccess
-            Effect: Deny
-            Principal: '*'
-            Action: s3:GetObject
-            Resource: !Sub '${AssetsBucket.Arn}/*'
-            Condition:
-              StringNotLike:
-                aws:UserAgent: 'Amazon CloudFront'
-              StringNotEquals:
-                aws:PrincipalArn: !GetAtt DeployUser.Arn
-          - Sid: AllowCloudFrontServicePrincipal
-            Effect: Allow
-            Principal:
-              Service: cloudfront.amazonaws.com
-            Action: s3:GetObject
-            Resource: !Sub '${AssetsBucket.Arn}/*'
-            Condition:
-              StringEquals:
-                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
-          - Sid: AllowDeployUserAccess
-            Effect: Allow
-            Principal:
-              AWS: !GetAtt DeployUser.Arn
-            Action:
-              - s3:ListBucket
-              - s3:GetObject
-              - s3:PutObject
-              - s3:DeleteObject
-            Resource:
-              - !GetAtt AssetsBucket.Arn
-              - !Sub '${AssetsBucket.Arn}/*'
 
   # ----------------------------------------------------------------------------
   # CLOUDFRONT ORIGIN ACCESS CONTROL (OAC)
   # ----------------------------------------------------------------------------
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       OriginAccessControlConfig:
         Name: !Sub '${SiteBucketName}-oac'
-        Description: !Sub 'OAC for ${SiteBucketName} and ${AssetsBucketName}'
+        Description: !Sub 'OAC for ${SiteBucketName}'
         SigningProtocol: sigv4
         SigningBehavior: always
         OriginAccessControlOriginType: s3
 
   # ----------------------------------------------------------------------------
-  # CLOUDFRONT FUNCTION - URL Rewrite para resolver index.html
+  # CLOUDFRONT FUNCTION - Host canónico (301) + rewrite a index.html
+  # Cualquier host que no sea el dominio principal (www o el *.cloudfront.net)
+  # redirige con 301 al dominio principal, conservando la query string (UTM).
   # ----------------------------------------------------------------------------
   URLRewriteFunction:
     Type: AWS::CloudFront::Function
@@ -185,12 +146,27 @@ Resources:
       Name: !Sub '${SiteBucketName}-url-rewrite'
       AutoPublish: true
       FunctionConfig:
-        Comment: 'Rewrite directory URLs to append index.html for static site routing'
+        Comment: 'Redirect to the canonical host + rewrite directory URLs to index.html'
         Runtime: cloudfront-js-2.0
-      FunctionCode: |
+      FunctionCode: !Sub |
         function handler(event) {
           var request = event.request;
           var uri = request.uri;
+          var host = request.headers.host && request.headers.host.value;
+
+          if (host !== '${DomainName}') {
+            var qs = request.querystring;
+            var pairs = Object.keys(qs).map(function (k) {
+              return qs[k].value ? k + '=' + qs[k].value : k;
+            });
+            var query = pairs.length ? '?' + pairs.join('&') : '';
+            return {
+              statusCode: 301,
+              statusDescription: 'Moved Permanently',
+              headers: { location: { value: 'https://${DomainName}' + uri + query } }
+            };
+          }
+
           if (uri.endsWith('/')) {
             request.uri += 'index.html';
           } else if (!uri.includes('.')) {
@@ -200,48 +176,47 @@ Resources:
         }
 
   # ----------------------------------------------------------------------------
-  # CLOUDFRONT - Public Key y Key Group para signed URLs de assets
+  # WAF - Bloquea por un rato a la IP que supere RateLimitPerIp peticiones en
+  # 5 minutos. Incluido en el plan Free (hasta 5 reglas, sin rule groups).
+  # Sin desafíos ni CAPTCHA: Googlebot y AdsBot tienen que ver la web limpia.
   # ----------------------------------------------------------------------------
-  AssetsPublicKey:
-    Type: AWS::CloudFront::PublicKey
+  WebACL:
+    Type: AWS::WAFv2::WebACL
     Properties:
-      PublicKeyConfig:
-        Name: !Sub '${AssetsBucketName}-public-key'
-        Comment: 'Public key for signed URLs on assets bucket'
-        EncodedKey: !Ref AssetsPublicKeyEncoded
-        CallerReference: !Sub '${AssetsBucketName}-key-ref'
-
-  AssetsKeyGroup:
-    Type: AWS::CloudFront::KeyGroup
-    Properties:
-      KeyGroupConfig:
-        Name: !Sub '${AssetsBucketName}-key-group'
-        Comment: 'Key group for signed URLs on assets'
-        Items:
-          - !Ref AssetsPublicKey
+      Name: !Sub '${SiteBucketName}-waf'
+      Description: 'Rate limit per IP for joel-suarez-portfolio'
+      Scope: CLOUDFRONT
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${SiteBucketName}-waf'
+      Rules:
+        - Name: rate-limit-per-ip
+          Priority: 0
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              Limit: !Ref RateLimitPerIp
+              EvaluationWindowSec: 300
+              AggregateKeyType: IP
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: rate-limit-per-ip
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: joel-suarez-portfolio
 
   # ----------------------------------------------------------------------------
-  # CLOUDFRONT - Response Headers Policy (cache-control para assets)
-  # ----------------------------------------------------------------------------
-  AssetsCacheHeadersPolicy:
-    Type: AWS::CloudFront::ResponseHeadersPolicy
-    Properties:
-      ResponseHeadersPolicyConfig:
-        Name: !Sub '${AssetsBucketName}-cache-control'
-        Comment: 'Long-lived cache for static assets'
-        CustomHeadersConfig:
-          Items:
-            - Header: cache-control
-              Value: 'public, max-age=63072000'
-              Override: true
-
-  # ----------------------------------------------------------------------------
-  # CLOUDFRONT DISTRIBUTION - 2 origins (site + assets)
+  # CLOUDFRONT DISTRIBUTION
   # ----------------------------------------------------------------------------
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       DistributionConfig:
         Enabled: true
@@ -250,25 +225,24 @@ Resources:
         HttpVersion: http2and3
         IPV6Enabled: true
         PriceClass: PriceClass_All
+        WebACLId: !GetAtt WebACL.Arn
 
-        # Sin dominio por ahora — certificado default de CloudFront
+        Aliases:
+          - !Ref DomainName
+          - !Sub 'www.${DomainName}'
+
         ViewerCertificate:
-          CloudFrontDefaultCertificate: true
+          AcmCertificateArn: !Ref SSLCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
 
-        # Origins
         Origins:
           - Id: SiteBucketOrigin
             DomainName: !GetAtt SiteBucket.RegionalDomainName
             S3OriginConfig:
               OriginAccessIdentity: ''
             OriginAccessControlId: !Ref CloudFrontOAC
-          - Id: AssetsBucketOrigin
-            DomainName: !GetAtt AssetsBucket.RegionalDomainName
-            S3OriginConfig:
-              OriginAccessIdentity: ''
-            OriginAccessControlId: !Ref CloudFrontOAC
 
-        # Default Cache Behavior — Site
         DefaultCacheBehavior:
           TargetOriginId: SiteBucketOrigin
           ViewerProtocolPolicy: redirect-to-https
@@ -284,32 +258,17 @@ Resources:
             - EventType: viewer-request
               FunctionARN: !GetAtt URLRewriteFunction.FunctionARN
 
-        # Cache Behaviors — Assets (signed URLs)
-        CacheBehaviors:
-          - PathPattern: 'assets/*'
-            TargetOriginId: AssetsBucketOrigin
-            ViewerProtocolPolicy: https-only
-            AllowedMethods:
-              - GET
-              - HEAD
-            CachedMethods:
-              - GET
-              - HEAD
-            Compress: true
-            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
-            ResponseHeadersPolicyId: !Ref AssetsCacheHeadersPolicy
-            TrustedKeyGroups:
-              - !Ref AssetsKeyGroup
-
-        # Custom Error Responses
+        # Una dirección que el sitio no tiene responde src/pages/404.astro con un
+        # 404 real (no la portada con 200). El bucket es privado (OAC), así que un
+        # archivo que no existe llega como 403.
         CustomErrorResponses:
           - ErrorCode: 403
-            ResponseCode: 200
-            ResponsePagePath: /index.html
+            ResponseCode: 404
+            ResponsePagePath: /404.html
             ErrorCachingMinTTL: 0
           - ErrorCode: 404
-            ResponseCode: 200
-            ResponsePagePath: /index.html
+            ResponseCode: 404
+            ResponsePagePath: /404.html
             ErrorCachingMinTTL: 0
 
         Restrictions:
@@ -323,69 +282,69 @@ Resources:
           Value: joel-suarez-portfolio
 
   # ----------------------------------------------------------------------------
-  # IAM USER - Deploy
+  # ROUTE 53 - Alias A/AAAA del dominio y de www hacia CloudFront
+  # Z2FDTNDATAQYW2 es el ID de zona fijo de CloudFront para registros alias.
   # ----------------------------------------------------------------------------
-  DeployUser:
-    Type: AWS::IAM::User
+  Route53RecordA:
+    Type: AWS::Route53::RecordSet
     Properties:
-      UserName: !Ref DeployUserName
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Project
-          Value: joel-suarez-portfolio
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+        EvaluateTargetHealth: false
 
-  DeployUserPolicy:
-    Type: AWS::IAM::ManagedPolicy
+  Route53RecordAAAA:
+    Type: AWS::Route53::RecordSet
     Properties:
-      ManagedPolicyName: !Sub '${DeployUserName}-policy'
-      Description: !Sub 'Permisos de deploy para ${DeployUserName}'
-      Users:
-        - !Ref DeployUser
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: S3SiteBucket
-            Effect: Allow
-            Action:
-              - s3:PutObject
-              - s3:DeleteObject
-              - s3:ListBucket
-              - s3:GetObject
-            Resource:
-              - !GetAtt SiteBucket.Arn
-              - !Sub '${SiteBucket.Arn}/*'
-          - Sid: S3AssetsBucket
-            Effect: Allow
-            Action:
-              - s3:PutObject
-              - s3:DeleteObject
-              - s3:ListBucket
-              - s3:GetObject
-            Resource:
-              - !GetAtt AssetsBucket.Arn
-              - !Sub '${AssetsBucket.Arn}/*'
-          - Sid: CloudFrontInvalidation
-            Effect: Allow
-            Action:
-              - cloudfront:CreateInvalidation
-              - cloudfront:GetDistribution
-            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
-          - Sid: CloudFormationManagement
-            Effect: Allow
-            Action:
-              - cloudformation:DescribeStacks
-              - cloudformation:DescribeStackEvents
-              - cloudformation:CreateChangeSet
-              - cloudformation:DescribeChangeSet
-              - cloudformation:ExecuteChangeSet
-              - cloudformation:UpdateStack
-            Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*'
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+        EvaluateTargetHealth: false
 
-  DeployUserAccessKey:
-    Type: AWS::IAM::AccessKey
+  Route53RecordWwwA:
+    Type: AWS::Route53::RecordSet
     Properties:
-      UserName: !Ref DeployUser
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub 'www.${DomainName}'
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+        EvaluateTargetHealth: false
+
+  Route53RecordWwwAAAA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub 'www.${DomainName}'
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt CloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+        EvaluateTargetHealth: false
+
+  # ----------------------------------------------------------------------------
+  # PLAN FREE DE TARIFA PLANA - 0 USD/mes, sin cobros por excedente.
+  # Cubre la distribución, el WAF y la zona hospedada. Al referenciarlos,
+  # CloudFormation lo crea al final y lo borra primero (un Free se cancela al
+  # instante).
+  # ----------------------------------------------------------------------------
+  PricingPlan:
+    Type: AWS::PricingPlanManager::Subscription
+    Properties:
+      PlanFamily: CloudFront
+      PlanTier: FREE
+      UsageLevel: DEFAULT
+      ResourceArns:
+        - !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+        - !GetAtt WebACL.Arn
+        - !Sub 'arn:${AWS::Partition}:route53:::hostedzone/${HostedZoneId}'
 
 # ==============================================================================
 # OUTPUTS
@@ -397,12 +356,6 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-SiteBucketName'
 
-  AssetsBucketName:
-    Description: Nombre del bucket de assets
-    Value: !Ref AssetsBucket
-    Export:
-      Name: !Sub '${AWS::StackName}-AssetsBucketName'
-
   DistributionId:
     Description: ID de la distribución CloudFront
     Value: !Ref CloudFrontDistribution
@@ -410,21 +363,21 @@ Outputs:
       Name: !Sub '${AWS::StackName}-DistributionId'
 
   DistributionURL:
-    Description: URL del sitio (CloudFront)
+    Description: URL de CloudFront (redirige al dominio principal)
     Value: !Sub 'https://${CloudFrontDistribution.DomainName}'
 
-  DeployUserAccessKeyId:
-    Description: Access Key ID del usuario de deploy
-    Value: !Ref DeployUserAccessKey
+  WebsiteURL:
+    Description: URL del sitio (dominio principal)
+    Value: !Sub 'https://${DomainName}'
 
-  DeployUserSecretAccessKey:
-    Description: Secret Access Key del usuario de deploy (guardar de forma segura)
-    Value: !GetAtt DeployUserAccessKey.SecretAccessKey
+  CertificateArn:
+    Description: ARN del certificado ACM
+    Value: !Ref SSLCertificate
 
-  AssetsKeyGroupId:
-    Description: ID del Key Group para signed URLs
-    Value: !Ref AssetsKeyGroup
+  WebACLArn:
+    Description: ARN del WAF
+    Value: !GetAtt WebACL.Arn
 
-  AssetsPublicKeyId:
-    Description: ID de la Public Key en CloudFront
-    Value: !Ref AssetsPublicKey
+  PricingPlanArn:
+    Description: ARN de la suscripción al plan Free
+    Value: !Ref PricingPlan

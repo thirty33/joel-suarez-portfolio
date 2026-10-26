@@ -1,0 +1,78 @@
+---
+import Icon from "../Icon.astro";
+import SectionHeading from "./SectionHeading.astro";
+import { PROCESS } from "../../data/home";
+import { at, tracks } from "../../lib/grid";
+
+const ICONS = ["users", "layers", "code", "trend"] as const;
+---
+
+<section id="proceso" class="relative overflow-clip bg-paper text-ink shell grid-rows-[5rem_auto_3rem_auto_6rem] lg:grid-rows-[8rem_auto_4.5rem_auto_9rem]" aria-labelledby="proceso-title" data-motion data-theme="light">
+	<div class="col-start-2 row-start-2">
+		<SectionHeading number="03" label="Proceso" ghost="Proceso" id="proceso-title">
+			<Fragment slot="title">Un proceso <span class="hl">que se ve</span></Fragment>
+			Sabes qué se construye, cómo y por qué en cada etapa. El diseño se dibuja antes del código y cada avance llega probado.
+		</SectionHeading>
+	</div>
+
+	<div class="col-start-2 row-start-4 grid grid-rows-[auto_3rem_auto] lg:grid-cols-[minmax(0,1fr)_4rem_minmax(0,27rem)] lg:grid-rows-1">
+		<!-- Steps on a rail that fills while you read -->
+		<div class="row-start-1 grid grid-cols-[3.4rem_1.5rem_minmax(0,1fr)] lg:col-start-1" style={`grid-template-rows:${tracks(PROCESS.length, "auto", "2.5rem")}`} data-process>
+			<span class="rail col-start-1 justify-self-center" style="grid-row:1 / -1" aria-hidden="true"><span data-process-fill></span></span>
+			<ol class="col-span-3 col-start-1 grid grid-cols-subgrid grid-rows-subgrid" style="grid-row:1 / -1">
+			{PROCESS.map((step, index) => (
+				<li class="col-span-3 col-start-1 grid grid-cols-subgrid" style={`grid-row:${at(index)}`} data-process-step>
+					<span class="step-dot relative z-10 col-start-1 grid h-[3.4rem] w-[3.4rem] place-items-center rounded-full font-display text-[1.4rem]">{index + 1}</span>
+					<div class="col-start-3 grid grid-rows-[auto_0.6rem_auto] content-start" data-reveal style={`--d:${index * 0.08}s`}>
+						<h3 class="row-start-1 grid grid-cols-[auto_0.6rem_auto] items-center justify-start text-[1.35rem] font-extrabold lg:text-[1.6rem]">
+							<span class="col-start-1">{step.title}</span>
+							<span class="col-start-3 text-ink/35"><Icon name={ICONS[index]} size={20} /></span>
+						</h3>
+						<p class="row-start-3 max-w-[34rem] text-[0.98rem] leading-relaxed text-ink/70">{step.text}</p>
+					</div>
+				</li>
+			))}
+			</ol>
+		</div>
+
+		<!-- The plan, drawn before the code -->
+		<aside class="row-start-3 lg:col-start-3 lg:row-start-1" aria-label="Así se ve el diseño antes de programar">
+			<div class="grid rounded-[28px] bg-ink text-white shadow-[0_50px_90px_-50px_rgba(5,12,23,.8)] grid-cols-[1.5rem_1fr_1.5rem] grid-rows-[1.5rem_auto_1.25rem_auto_1.25rem_auto_1.5rem] lg:sticky lg:top-28" data-reveal="zoom">
+				<p class="col-start-2 row-start-2 grid grid-cols-[auto_1fr_auto] items-center">
+					<span class="eyebrow col-start-1 text-lemon">Fase 3 · Pedidos</span>
+					<span class="chip col-start-3 bg-white/10 text-white/75">Diagrama de capas</span>
+				</p>
+				<div class="relative col-start-2 row-start-4 grid place-items-center" aria-hidden="true">
+					<svg class="w-full max-w-[19rem]" viewBox="0 0 280 280">
+						<circle cx="140" cy="140" r="132" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.18)" stroke-width="2" />
+						<circle class="spin" style="transform-origin:140px 140px" cx="140" cy="140" r="132" fill="none" stroke="#f2e96d" stroke-width="2" stroke-dasharray="3 12" />
+						<circle cx="140" cy="140" r="98" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.2)" stroke-width="2" />
+						<circle cx="140" cy="140" r="64" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.24)" stroke-width="2" />
+						<circle class="pulse" style="transform-origin:140px 140px" cx="140" cy="140" r="32" fill="#f2e96d" />
+						<text x="140" y="145" text-anchor="middle" fill="#050c17" font-family="Anton, sans-serif" font-size="14">PEDIDO</text>
+						<g class="spin-rev" style="transform-origin:140px 140px">
+							<circle cx="140" cy="42" r="7" fill="#7cc4ff" />
+							<circle cx="238" cy="140" r="7" fill="#3ddc97" />
+							<circle cx="140" cy="238" r="7" fill="#ff7a59" />
+						</g>
+						<text x="140" y="20" text-anchor="middle" fill="rgba(255,255,255,.5)" font-family="Montserrat, sans-serif" font-size="9" font-weight="800" letter-spacing="2">INTERFAZ</text>
+						<text x="140" y="56" text-anchor="middle" fill="rgba(255,255,255,.6)" font-family="Montserrat, sans-serif" font-size="9" font-weight="800" letter-spacing="2">INFRAESTRUCTURA</text>
+						<text x="140" y="90" text-anchor="middle" fill="rgba(255,255,255,.75)" font-family="Montserrat, sans-serif" font-size="9" font-weight="800" letter-spacing="2">APLICACIÓN</text>
+					</svg>
+				</div>
+				<ul class="col-start-2 row-start-6 grid" style={`grid-template-rows:${tracks(3, "auto", "0.55rem")}`}>
+					{[
+						["check-circle", "248 pruebas en verde antes de publicar", "text-mint"],
+						["layers", "Cada archivo en su capa, verificado", "text-sky"],
+						["cloud", "Despliegue automático en AWS", "text-lemon"],
+					].map(([icon, text, color], index) => (
+						<li class="grid grid-cols-[1.25rem_0.6rem_1fr] items-center text-[0.86rem] text-white/80" style={`grid-row:${at(index)}`}>
+							<span class:list={["col-start-1", color]}><Icon name={icon as "check-circle"} size={18} /></span>
+							<span class="col-start-3">{text}</span>
+						</li>
+					))}
+				</ul>
+			</div>
+		</aside>
+	</div>
+</section>

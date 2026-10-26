@@ -1,0 +1,18 @@
+---
+/** The numbered index of the brand design, on the right edge: a tick per section and the current one written vertically. */
+import { SECTIONS } from "../../data/home";
+import { at, tracks } from "../../lib/grid";
+---
+
+<nav class="section-index fixed right-[0.9rem] top-1/2 z-30 hidden -translate-y-1/2 grid-rows-[auto_1.1rem_auto] justify-items-end lg:grid" aria-label="Índice de secciones" data-section-index>
+	<p class="index-current row-start-1 justify-self-center" aria-hidden="true" data-index-current>{SECTIONS[0].number} · {SECTIONS[0].label}</p>
+	<ol class="row-start-3 grid justify-items-end" style={`grid-template-rows:${tracks(SECTIONS.length, "auto", "0.15rem")}`}>
+		{SECTIONS.map((section, index) => (
+			<li style={`grid-row:${at(index)}`}>
+				<a class="index-link grid h-[1.15rem] w-[1.6rem] items-center justify-items-end" href={`#${section.id}`} aria-label={`${section.number} · ${section.label}`} data-index-link={section.id} data-index-label={`${section.number} · ${section.label}`}>
+					<span class="tick"></span>
+				</a>
+			</li>
+		))}
+	</ol>
+</nav>

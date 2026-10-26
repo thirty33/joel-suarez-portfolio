@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Logo from "../components/Logo.astro";
+import { HELLO_MESSAGE, whatsappLink } from "../data/home";
+
+/** Served by CloudFront with a real 404 status for any address the site doesn't have. */
+const hello = whatsappLink(HELLO_MESSAGE);
+---
+
+<BaseLayout
+	title="Página no encontrada · Joel Suárez"
+	description="Esta página no existe. Vuelve al inicio o escríbeme por WhatsApp."
+	preloadHero={false}
+>
+	<main
+		id="contenido"
+		class="shell relative isolate min-h-svh overflow-clip grid-rows-[2rem_auto_minmax(3rem,1fr)_auto_minmax(3rem,1fr)] lg:grid-rows-[2.5rem_auto_minmax(4rem,1fr)_auto_minmax(4rem,1fr)]"
+	>
+		<p class="ghost absolute -bottom-[0.08em] -right-[0.04em] -z-10 text-[clamp(11rem,40vw,32rem)]" style="--ghost-stroke:rgba(242,233,109,.12)" aria-hidden="true">404</p>
+
+		<a href="/" class="col-start-2 row-start-2 justify-self-start" aria-label="Joel Suárez, ir al inicio">
+			<Logo />
+		</a>
+
+		<div class="col-start-2 row-start-4 grid grid-rows-[auto_1rem_auto_1.25rem_auto_2rem_auto] justify-items-start">
+			<p class="eyebrow row-start-1 text-lemon">Error 404</p>
+			<h1 class="display row-start-3 text-[clamp(2.8rem,8vw,6.5rem)]">Esta página<br />no existe</h1>
+			<p class="row-start-5 max-w-[34rem] text-[1.02rem] leading-relaxed text-white/75">
+				Puede que el enlace esté mal escrito o que la página se haya movido. Vuelve al inicio o escríbeme y te ayudo a encontrar lo que buscas.
+			</p>
+			<div class="row-start-7 grid grid-rows-[auto_0.75rem_auto] justify-items-start sm:grid-cols-[auto_0.9rem_auto] sm:grid-rows-1">
+				<a class="btn btn--lemon col-start-1 row-start-1" href="/">Volver al inicio</a>
+				<a class="btn btn--line btn-ic col-start-1 row-start-3 sm:col-start-3 sm:row-start-1" href={hello} target="_blank" rel="noopener">
+					<span class="ico" style="--ico:url(/icons/whatsapp.svg); --ico-size:1.1rem"></span>
+					<span>Escríbeme por WhatsApp</span>
+				</a>
+			</div>
+		</div>
+	</main>
+</BaseLayout>

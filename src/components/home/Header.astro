@@ -1,0 +1,76 @@
+---
+import Icon from "../Icon.astro";
+import Logo from "../Logo.astro";
+import { CONTACT, HELLO_MESSAGE, SECTIONS, whatsappLink } from "../../data/home";
+import { at, tracks } from "../../lib/grid";
+
+const navItems = SECTIONS.filter((section) => section.id !== "contacto");
+const hello = whatsappLink(HELLO_MESSAGE);
+---
+
+<div class="progress-bar fixed left-0 top-0 z-[60] h-[3px] w-full bg-lemon" data-progress aria-hidden="true"></div>
+
+<header class="site-header fixed inset-x-0 top-0 z-50 text-white" data-header>
+	<div class="shell grid-rows-[0.8rem_auto_0.8rem] lg:grid-rows-[1rem_auto_1rem]">
+		<div class="col-start-2 row-start-2 grid grid-cols-[auto_1fr_auto] items-center">
+			<a href="#inicio" class="col-start-1" aria-label="Joel Suárez, volver al inicio">
+				<Logo />
+			</a>
+
+			<nav class="col-start-2 hidden justify-self-center lg:grid" aria-label="Secciones">
+				<ul class="grid items-center" style={`grid-template-columns:${tracks(navItems.length, "auto", "2.1rem")}`}>
+					{navItems.map((section, index) => (
+						<li style={`grid-column:${at(index)}`}>
+							<a class="nav-link" href={`#${section.id}`} data-nav-link={section.id}>{section.label}</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+
+			<div class="col-start-3 grid grid-cols-[auto_0.75rem_auto] items-center">
+				<a class="btn btn--lemon btn--sm btn-ic col-start-1 max-lg:hidden" href={hello} target="_blank" rel="noopener" data-magnetic>
+					<span class="ico" style="--ico:url(/icons/whatsapp.svg); --ico-size:1.05rem"></span>
+					<span>Hablemos</span>
+				</a>
+				<button
+					type="button"
+					class="burger col-start-3 h-11 w-11 rounded-full bg-white/10 ring-1 ring-white/20 lg:hidden"
+					aria-expanded="false"
+					aria-controls="menu"
+					aria-label="Abrir el menú"
+					data-menu-toggle
+				>
+					<span></span><span></span><span></span>
+				</button>
+			</div>
+		</div>
+	</div>
+</header>
+
+<!-- Mobile menu: the lemon sheet of the brand design -->
+<div id="menu" class="menu-sheet fixed inset-0 z-40 overflow-y-auto bg-lemon text-ink lg:hidden" data-menu aria-hidden="true">
+	<div class="shell min-h-full grid-rows-[6rem_auto_2.5rem_auto_minmax(2rem,1fr)_auto_2rem]">
+		<p class="menu-item col-start-2 row-start-2 eyebrow text-ink/60" style="--i:0">Menú</p>
+		<ul class="col-start-2 row-start-4 grid" style={`grid-template-rows:${tracks(SECTIONS.length, "auto", "0.35rem")}`}>
+			{SECTIONS.map((section, index) => (
+				<li class="menu-item" style={`grid-row:${at(index)}; --i:${index + 1}`}>
+					<a href={`#${section.id}`} class="grid grid-cols-[2.6rem_0.5rem_auto] items-baseline" data-menu-link>
+						<span class="col-start-1 font-display text-[1.15rem] text-ink/45">{section.number}</span>
+						<span class="col-start-3 display text-[2.6rem] leading-[1.05]">{section.label}</span>
+					</a>
+				</li>
+			))}
+		</ul>
+		<div class="menu-item col-start-2 row-start-6 grid grid-rows-[auto_1rem_auto]" style={`--i:${SECTIONS.length + 1}`}>
+			<a class="btn btn--ink btn-ic row-start-1 justify-self-stretch" href={hello} target="_blank" rel="noopener">
+				<span class="ico" style="--ico:url(/icons/whatsapp.svg); --ico-size:1.15rem"></span>
+				<span>Hablemos por WhatsApp</span>
+			</a>
+			<div class="row-start-3 grid grid-cols-[auto_1.25rem_auto_1.25rem_auto] justify-center text-ink/70">
+				<a class="col-start-1" href={`mailto:${CONTACT.email}`} aria-label="Correo"><Icon name="mail" size={22} /></a>
+				<a class="col-start-3" href={CONTACT.linkedin} target="_blank" rel="noopener" aria-label="LinkedIn"><Icon name="linkedin" size={22} /></a>
+				<a class="col-start-5" href={CONTACT.github} target="_blank" rel="noopener" aria-label="GitHub"><span class="ico" style="--ico:url(/icons/github.svg); --ico-size:1.35rem"></span></a>
+			</div>
+		</div>
+	</div>
+</div>

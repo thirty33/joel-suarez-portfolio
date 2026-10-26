@@ -1,0 +1,281 @@
+---
+import Icon from "../Icon.astro";
+import { FILM_STEPS } from "../../data/home";
+import { at, tracks } from "../../lib/grid";
+
+const FIELDS = [
+	{ label: "Intención", value: "Pedido nuevo", d: 0.5 },
+	{ label: "Empresa", value: "Constructora Andes", d: 0.9 },
+	{ label: "Sucursal", value: "Providencia", d: 1.3 },
+	{ label: "Entrega", value: "Viernes · 12:30", d: 1.7 },
+	{ label: "Asesor", value: "Camila · ventas", d: 2.1, desktopOnly: true },
+];
+
+const METHODS = [
+	{ name: "Webpay" },
+	{ name: "Klap", hit: true },
+	{ name: "Wompi" },
+	{ name: "Pago Móvil" },
+	{ name: "Binance" },
+	{ name: "PSE" },
+];
+
+const STOCK = [
+	{ name: "Pollo asado", from: "84%", to: "62%", d: 2.3 },
+	{ name: "Arroz", from: "70%", to: "51%", d: 2.5 },
+	{ name: "Ensalada César", from: "58%", to: "39%", d: 2.7, bar: "#7cc4ff" },
+];
+
+const EVENTS = [
+	{ name: "purchase", value: "$189.900", d: 2.6 },
+	{ name: "add_to_cart", value: "20 platos", d: 2.9 },
+	{ name: "view_item", value: "Box Fresco", d: 3.2 },
+];
+---
+
+<section
+	id="como-funciona"
+	class="relative overflow-hidden bg-ink-2 shell grid-rows-[4.5rem_auto_2.5rem_auto_5.5rem] lg:grid-rows-[7rem_auto_3.5rem_auto_8rem]"
+	aria-labelledby="film-title"
+	data-motion
+	data-theme="dark"
+>
+	<div class="pointer-events-none absolute inset-0 opacity-70" style="background-image:radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size:26px 26px;" aria-hidden="true"></div>
+	<div class="hero__glow -right-[18rem] top-[8rem] h-[40rem] w-[40rem]" aria-hidden="true"></div>
+
+	<div class="col-start-2 row-start-2 grid grid-rows-[auto_1.25rem_auto] items-end lg:grid-cols-[minmax(0,1fr)_3rem_minmax(0,25rem)] lg:grid-rows-1" data-reveal>
+		<div class="grid grid-rows-[auto_1rem_auto]">
+			<p class="eyebrow row-start-1 text-lemon">En 30 segundos</p>
+			<h2 id="film-title" class="display row-start-3 text-[2.7rem] leading-[1.06] text-balance lg:text-[4.1rem]">Así trabaja un sistema <span class="hl">hecho a tu medida</span></h2>
+		</div>
+		<p class="row-start-3 text-[1rem] leading-relaxed text-white/70 text-pretty lg:col-start-3 lg:row-start-1 lg:text-[1.08rem]">
+			Del primer mensaje de tu cliente a la venta medida, sin que nadie copie datos a mano. Cada pieza ya la construí y está funcionando en empresas reales.
+		</p>
+	</div>
+
+	<div class="film-wrap col-start-2 row-start-4 grid grid-rows-[auto_1.5rem_auto] lg:grid-cols-[minmax(0,20rem)_2.5rem_minmax(0,1fr)] lg:grid-rows-1" data-film-wrap>
+		<!-- The steps: they follow the film and jump to a scene -->
+		<ol class="row-start-3 grid content-center lg:col-start-1 lg:row-start-1" style={`grid-template-rows:${tracks(FILM_STEPS.length, "auto", "0.7rem")}`}>
+			{FILM_STEPS.map((step, index) => (
+				<li style={`grid-row:${at(index)}`}>
+					<button
+						type="button"
+						class="step-btn grid w-full grid-cols-[1rem_2.2rem_0.85rem_1fr_1rem] grid-rows-[0.85rem_auto_0.2rem_auto_0.85rem]"
+						style={`--scene-duration:${step.duration}ms`}
+						data-film-step={index}
+					>
+						<span class="step-btn__fill" aria-hidden="true"><span></span></span>
+						<span class="col-start-2 row-span-3 row-start-2 grid h-9 w-9 place-items-center self-center rounded-full bg-white/8 font-display text-[1rem] text-lemon ring-1 ring-white/15">{index + 1}</span>
+						<span class="col-start-4 row-start-2 text-[0.98rem] font-bold">{step.title}</span>
+						<span class="col-start-4 row-start-4 text-[0.82rem] text-white/60 max-lg:hidden">{step.text}</span>
+					</button>
+				</li>
+			))}
+		</ol>
+
+		<div class="film row-start-1 lg:col-start-3" data-film role="region" aria-roledescription="animación" aria-label="Cómo trabaja un sistema hecho a medida, en cinco escenas">
+			<!-- 1 · The customer writes on WhatsApp -->
+			<div class="film__scene is-active is-playing bg-[radial-gradient(circle_at_28%_45%,#114470_0%,#071425_68%)]" data-scene>
+				<div class="absolute inset-0 grid grid-cols-[1fr_auto_1fr] grid-rows-[1.6rem_auto_1.4rem_1fr] lg:grid-cols-[2.75rem_auto_3rem_1fr_2.5rem] lg:grid-rows-[1fr_auto_1fr] lg:items-center">
+					<div class="col-start-2 row-start-2 grid grid-rows-[auto_auto_0.9rem_auto] text-center lg:col-start-4 lg:text-left">
+						<span class="film__word slam row-start-1 text-[2.5rem] lg:text-[4.3rem]" style="--d:.3s">Tu cliente</span>
+						<span class="film__word slam row-start-2 text-[2.5rem] text-lemon lg:text-[4.3rem]" style="--d:.55s">escribe</span>
+						<span class="rise row-start-4 max-w-[20rem] text-[0.82rem] leading-relaxed text-white/75 max-lg:hidden lg:text-[1rem]" style="--d:.9s">Por WhatsApp, como siempre. Cada mensaje llega a una bandeja que comparte todo tu equipo.</span>
+					</div>
+					<div class="rise col-start-2 row-start-4 lg:row-start-2" style="--d:.1s">
+						<div class="phone">
+							<div class="phone__screen grid grid-rows-[auto_auto]">
+								<div class="wa-head row-start-1 grid grid-cols-[0.75rem_auto_0.6rem_1fr_0.75rem] grid-rows-[0.65rem_auto_0.65rem] items-center">
+									<span class="col-start-2 row-start-2 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-[0.7rem] font-bold text-[#075e54]">CA</span>
+									<span class="col-start-4 row-start-2 grid grid-rows-[auto_0.1rem_auto]">
+										<span class="row-start-1 text-[0.78rem] font-semibold">Constructora Andes</span>
+										<span class="row-start-3 text-[0.62rem] text-white/75">en línea</span>
+									</span>
+								</div>
+								<div class="row-start-2 grid min-h-[20rem] content-start grid-cols-[0.6rem_1fr_0.6rem] grid-rows-[0.8rem_auto_0.45rem_auto_0.45rem_auto_0.45rem_auto] lg:min-h-[24rem]">
+									<p class="bubble bubble--in pop col-start-2 row-start-2" style="--d:.6s">Hola 👋 necesito 20 almuerzos para el viernes en la sucursal Providencia</p>
+									<div class="typing blip col-start-2 row-start-4" style="--d:1.3s; --out:2.2s" aria-hidden="true"><span></span><span></span><span></span></div>
+									<p class="bubble bubble--out pop col-start-2 row-start-4" style="--d:2.3s">¡Hola, Marcela! 20 almuerzos para el viernes en Providencia. ¿Te lo dejo listo?</p>
+									<p class="bubble bubble--in pop col-start-2 row-start-6" style="--d:3.4s">Sí, porfa 🙌</p>
+									<p class="bubble bubble--out pop col-start-2 row-start-8" style="--d:4.2s">Listo ✅ te envío el link de pago</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 2 · The AI understands it -->
+			<div class="film__scene bg-[linear-gradient(140deg,#0c3a62_0%,#050c17_72%)]" data-scene>
+				<div class="absolute inset-0 grid grid-cols-[1.1rem_1fr_1.1rem] grid-rows-[1.6rem_auto_1.25rem_auto_1fr] lg:grid-cols-[2.75rem_minmax(0,1fr)_2.5rem_minmax(0,22.5rem)_2.75rem] lg:grid-rows-[1fr_auto_1fr] lg:items-center">
+					<div class="col-start-2 row-start-2 grid grid-rows-[auto_auto_0.9rem_auto] text-center lg:text-left">
+						<span class="film__word slam row-start-1 text-[2.5rem] lg:text-[4.3rem]" style="--d:.2s">La IA</span>
+						<span class="film__word slam row-start-2 text-[2.5rem] text-lemon lg:text-[4.3rem]" style="--d:.45s">lo entiende</span>
+						<span class="rise row-start-4 max-w-[20rem] text-[0.82rem] leading-relaxed text-white/75 max-lg:hidden lg:text-[1rem]" style="--d:.8s">Lee el mensaje, reconoce la empresa y la sucursal, asigna al asesor y deja el pedido en tu CRM.</span>
+					</div>
+					<div class="rise col-start-2 row-start-4 lg:col-start-4 lg:row-start-2" style="--d:.15s">
+						<div class="glass glass--dark grid w-full grid-cols-[1rem_1fr_1rem] grid-rows-[1rem_auto_0.85rem_auto_1rem]">
+							<div class="col-start-2 row-start-2 grid grid-cols-[auto_0.65rem_1fr_auto] items-center">
+								<span class="pulse col-start-1 grid h-9 w-9 place-items-center rounded-xl bg-lemon text-ink"><Icon name="sparkle" size={18} /></span>
+								<span class="col-start-3 grid grid-rows-[auto_0.1rem_auto]">
+									<span class="row-start-1 text-[0.85rem] font-bold">Agente de IA</span>
+									<span class="row-start-3 text-[0.68rem] text-white/55">clasificando el mensaje…</span>
+								</span>
+								<span class="chip col-start-4 bg-white/10 text-[0.65rem] text-white/80">laravel/ai</span>
+							</div>
+							<div class="col-start-2 row-start-4 grid" style={`grid-template-rows:${tracks(FIELDS.length + 1, "auto", "0.45rem")}`}>
+								{FIELDS.map((field, index) => (
+									<div class:list={["field-row grid grid-cols-[5.2rem_0.5rem_1fr_0.5rem_auto] items-center", field.desktopOnly && "max-lg:hidden"]} style={`grid-row:${at(index)}`}>
+										<span class="col-start-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-white/50">{field.label}</span>
+										<span class="type-in col-start-3 text-[0.82rem] font-semibold" style={`--d:${field.d}s`}>{field.value}</span>
+										<span class="pop col-start-5 text-mint" style={`--d:${field.d + 0.7}s`}><Icon name="check" size={16} stroke={3} /></span>
+									</div>
+								))}
+								<p class="stamp pop justify-self-center text-[0.78rem] font-extrabold uppercase tracking-[0.12em]" style={`grid-row:${at(FIELDS.length)}; --d:3.1s`}>Pedido #23174 creado</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 3 · You get paid online -->
+			<div class="film__scene bg-lemon text-ink" data-scene>
+				<div class="absolute inset-0 opacity-60" style="background-image:repeating-linear-gradient(135deg, rgba(5,12,23,.05) 0 2px, transparent 2px 16px);" aria-hidden="true"></div>
+				<div class="absolute inset-0 grid grid-cols-[1.1rem_1fr_1.1rem] grid-rows-[1.6rem_auto_1.25rem_auto_1fr] lg:grid-cols-[2.75rem_minmax(0,1fr)_2.5rem_minmax(0,21rem)_2.75rem] lg:grid-rows-[1fr_auto_1fr] lg:items-center">
+					<div class="col-start-2 row-start-2 grid grid-rows-[auto_auto_0.9rem_auto] text-center lg:text-left">
+						<span class="film__word slam row-start-1 text-[2.5rem] leading-[1.06] lg:text-[4.3rem]" style="--d:.2s">Cobras</span>
+						<span class="film__word slam row-start-2 text-[2.5rem] leading-[1.06] lg:text-[4.3rem]" style="--d:.45s"><span class="hl hl--ink">en línea</span></span>
+						<span class="rise row-start-4 max-w-[20rem] text-[0.82rem] font-medium leading-relaxed text-ink/75 max-lg:hidden lg:text-[1rem]" style="--d:.8s">Link de pago, reintentos y conciliación con el pedido. Con la pasarela que usa tu país.</span>
+					</div>
+					<div class="rise col-start-2 row-start-4 lg:col-start-4 lg:row-start-2" style="--d:.15s">
+						<div class="grid w-full grid-cols-[1.1rem_1fr_1.1rem] grid-rows-[1.1rem_auto_0.6rem_auto_1rem_auto_1.1rem_auto_1.1rem] rounded-[22px] bg-white shadow-[0_40px_80px_-40px_rgba(5,12,23,.6)]">
+							<div class="col-start-2 row-start-2 grid grid-cols-[auto_1fr_auto] items-center">
+								<span class="eyebrow col-start-1 text-[0.65rem] text-slate">Link de pago</span>
+								<span class="col-start-3 text-[0.72rem] font-bold text-slate">Pedido #23174</span>
+							</div>
+							<div class="col-start-2 row-start-4 grid grid-cols-[auto_0.5rem_auto] items-end justify-start">
+								<span class="col-start-1 font-display text-[2.7rem] leading-none">$189.900</span>
+								<span class="col-start-3 text-[0.8rem] font-bold text-slate">CLP</span>
+							</div>
+							<div class="col-start-2 row-start-6 grid grid-cols-[1fr_0.4rem_1fr_0.4rem_1fr] grid-rows-[auto_0.4rem_auto]">
+								{METHODS.map((method, index) => (
+									<span
+										class:list={["method", method.hit && "method--hit"]}
+										style={`grid-column:${(index % 3) * 2 + 1}; grid-row:${Math.floor(index / 3) * 2 + 1}; --d:.9s`}
+									>{method.name}</span>
+								))}
+							</div>
+							<div class="col-start-2 row-start-8 grid grid-cols-[3.4rem_0.85rem_1fr] items-center">
+								<span class="relative col-start-1 grid h-[3.4rem] w-[3.4rem] place-items-center">
+									<svg class="pay-ring absolute inset-0 -rotate-90" viewBox="0 0 60 60" aria-hidden="true">
+										<circle cx="30" cy="30" r="26" fill="none" stroke="#e9ecf1" stroke-width="5" />
+										<circle class="pay-ring__run" cx="30" cy="30" r="26" fill="none" stroke="#3ddc97" stroke-width="5" stroke-linecap="round" pathLength="1000" />
+									</svg>
+									<svg class="check relative h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="#1fae6e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" style="--d:2s" /></svg>
+								</span>
+								<span class="col-start-3 grid grid-rows-[auto_0.2rem_auto]">
+									<span class="pop row-start-1 text-[1rem] font-extrabold" style="--d:2.1s; transform-origin:left center">Pago aprobado</span>
+									<span class="rise row-start-3 text-[0.75rem] text-slate" style="--d:2.4s">Conciliado · recibo enviado por WhatsApp</span>
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 4 · The ERP invoices it and the stock moves -->
+			<div class="film__scene bg-[radial-gradient(circle_at_72%_28%,#134672_0%,#050c17_66%)]" data-scene>
+				<div class="absolute inset-0 grid grid-cols-[1.1rem_1fr_1.1rem] grid-rows-[1.6rem_auto_1.4rem_auto_1rem_auto_1fr] lg:grid-cols-[2.75rem_1fr_2.75rem] lg:grid-rows-[1fr_auto_2rem_auto_1.25rem_auto_1fr]">
+					<div class="col-start-2 row-start-2 grid grid-rows-[auto] justify-items-center text-center">
+						<span class="film__word slam row-start-1 text-[2.5rem] lg:text-[3.8rem]" style="--d:.2s">Se factura <span class="text-lemon">solo</span></span>
+					</div>
+					<div class="col-start-2 row-start-4 grid grid-cols-[minmax(0,auto)_0.75rem_1fr_0.75rem_minmax(0,auto)] items-center lg:grid-cols-[auto_1.5rem_1fr_1.5rem_auto]">
+						<div class="pop glass col-start-1 grid grid-cols-[0.8rem_auto_0.8rem] grid-rows-[0.7rem_auto_0.25rem_auto_0.7rem]" style="--d:.5s">
+							<span class="col-start-2 row-start-2 text-[0.72rem] font-bold lg:text-[0.85rem]">Pedido #23174</span>
+							<span class="col-start-2 row-start-4 grid grid-cols-[0.5rem_0.35rem_auto] items-center text-[0.62rem] text-slate lg:text-[0.72rem]">
+								<span class="col-start-1 h-2 w-2 rounded-full bg-mint"></span>
+								<span class="col-start-3">Pagado · $189.900</span>
+							</span>
+						</div>
+						<div class="flow-line col-start-3" aria-hidden="true">
+							<span class="flow-dot" style="--d:.6s"></span>
+							<span class="flow-dot" style="--d:1.2s"></span>
+							<span class="flow-dot" style="--d:1.8s"></span>
+						</div>
+						<div class="pop glass glass--dark col-start-5 grid grid-cols-[0.8rem_auto_0.8rem] grid-rows-[0.7rem_auto_0.25rem_auto_0.45rem_auto_0.7rem]" style="--d:.8s">
+							<span class="col-start-2 row-start-2 text-[0.72rem] font-bold lg:text-[0.85rem]">Tu ERP</span>
+							<span class="col-start-2 row-start-4 text-[0.6rem] text-white/60 lg:text-[0.7rem]">Defontana · Siigo · Bsale</span>
+							<span class="pop chip chip-ic col-start-2 row-start-6 bg-mint/15 text-[0.62rem] text-mint" style="--d:2.1s">
+								<Icon name="check" size={12} stroke={3} />
+								<span>Factura emitida</span>
+							</span>
+						</div>
+					</div>
+					<div class="rise col-start-2 row-start-6 grid w-full max-w-[30rem] grid-cols-[1rem_1fr_1rem] grid-rows-[0.9rem_auto_0.8rem_auto_0.9rem] justify-self-center rounded-[18px] bg-white/[0.06] ring-1 ring-white/10" style="--d:1.2s">
+						<div class="col-start-2 row-start-2 grid grid-cols-[auto_1fr_auto] items-center">
+							<span class="col-start-1 text-[0.8rem] font-bold">Inventario</span>
+							<span class="col-start-3 text-[0.68rem] text-white/55">se descuenta solo</span>
+						</div>
+						<div class="col-start-2 row-start-4 grid" style={`grid-template-rows:${tracks(STOCK.length, "auto", "0.6rem")}`}>
+							{STOCK.map((item, index) => (
+								<div class="grid grid-cols-[7.5rem_0.75rem_1fr] items-center" style={`grid-row:${at(index)}`}>
+									<span class="col-start-1 text-[0.72rem] text-white/75">{item.name}</span>
+									<span class="stock-bar col-start-3" style={`--from:${item.from}; --to:${item.to}; --d:${item.d}s; ${item.bar ? `--bar:${item.bar}` : ""}`}><span></span></span>
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 5 · And you measure everything -->
+			<div class="film__scene bg-ink" data-scene>
+				<img src="/images/joel/desk-1100.webp" alt="" loading="lazy" decoding="async" class="kenburns absolute inset-0 h-full w-full object-cover opacity-30" />
+				<div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,12,23,.95)_0%,rgba(5,12,23,.75)_55%,rgba(5,12,23,.55)_100%)]" aria-hidden="true"></div>
+				<div class="absolute inset-0 grid grid-cols-[1.1rem_1fr_1.1rem] grid-rows-[1.6rem_auto_1.25rem_auto_1fr] lg:grid-cols-[2.75rem_minmax(0,1fr)_2.5rem_minmax(0,23rem)_2.75rem] lg:grid-rows-[1fr_auto_1fr] lg:items-center">
+					<div class="col-start-2 row-start-2 grid grid-rows-[auto_auto_0.9rem_auto] text-center lg:text-left">
+						<span class="film__word slam row-start-1 text-[2.5rem] lg:text-[4.3rem]" style="--d:.2s">Y lo mides</span>
+						<span class="film__word slam row-start-2 text-[2.5rem] text-lemon lg:text-[4.3rem]" style="--d:.45s">todo</span>
+						<span class="rise row-start-4 max-w-[20rem] text-[0.82rem] leading-relaxed text-white/75 max-lg:hidden lg:text-[1rem]" style="--d:.8s">GA4, Pixel de Meta y Search Console bien configurados: sabes qué vende y de dónde llega.</span>
+					</div>
+					<div class="rise col-start-2 row-start-4 lg:col-start-4 lg:row-start-2" style="--d:.15s">
+						<div class="glass grid w-full grid-cols-[1.1rem_1fr_1.1rem] grid-rows-[1rem_auto_0.4rem_auto_0.8rem_auto_0.9rem_auto_1rem]">
+							<div class="col-start-2 row-start-2 grid grid-cols-[auto_1fr_auto] items-center">
+								<span class="col-start-1 text-[0.75rem] font-bold text-slate">Clics orgánicos</span>
+								<span class="col-start-3 text-[0.65rem] font-semibold text-slate">Search Console</span>
+							</div>
+							<div class="col-start-2 row-start-4 grid grid-cols-[auto_0.6rem_auto] items-end justify-start">
+								<span class="pop col-start-1 font-display text-[2.8rem] leading-none" style="--d:1.6s; transform-origin:left bottom">+194%</span>
+								<span class="col-start-3 text-[0.72rem] font-semibold text-slate">en dos semanas</span>
+							</div>
+							<svg class="col-start-2 row-start-6 h-[6.5rem] w-full" viewBox="0 0 300 110" preserveAspectRatio="none" aria-hidden="true">
+								<path class="chart-area" d="M0 96 C30 94 45 92 70 88 S115 84 135 70 S180 58 200 46 S250 22 300 10 L300 110 L0 110Z" fill="#f2e96d" opacity=".6" />
+								<path class="chart-line" d="M0 96 C30 94 45 92 70 88 S115 84 135 70 S180 58 200 46 S250 22 300 10" fill="none" stroke="#050c17" stroke-width="3.5" stroke-linecap="round" pathLength="1000" />
+							</svg>
+							<div class="col-start-2 row-start-8 grid" style={`grid-template-rows:${tracks(EVENTS.length, "auto", "0.35rem")}`}>
+								{EVENTS.map((event, index) => (
+									<div class="pop grid grid-cols-[0.65rem_0.5rem_0.55rem_1fr_auto_0.65rem] grid-rows-[0.38rem_auto_0.38rem] items-center rounded-lg bg-ink/[0.05]" style={`grid-row:${at(index)}; --d:${event.d}s; transform-origin:left center`}>
+										<span class="col-start-2 row-start-2 h-2 w-2 rounded-full bg-mint"></span>
+										<span class="col-start-4 row-start-2 font-mono text-[0.7rem] font-semibold">{event.name}</span>
+										<span class="col-start-5 row-start-2 text-[0.68rem] text-slate">{event.value}</span>
+									</div>
+								))}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-black/55 to-transparent" aria-hidden="true"></div>
+			<div class="film__bars" aria-label="Escenas">
+				{FILM_STEPS.map((step, index) => (
+					<button type="button" class="film__bar" style={`--scene-duration:${step.duration}ms`} aria-label={`Ir a la escena ${index + 1}: ${step.title}`} data-film-bar><span></span></button>
+				))}
+			</div>
+			<button type="button" class="film__toggle" aria-label="Pausar o reproducir la animación" data-film-toggle>
+				<span data-icon-pause><Icon name="pause" size={18} stroke={2.4} /></span>
+				<span data-icon-play><Icon name="play" size={16} /></span>
+			</button>
+		</div>
+	</div>
+</section>

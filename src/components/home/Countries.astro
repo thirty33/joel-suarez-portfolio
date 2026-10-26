@@ -1,0 +1,83 @@
+---
+import Flag from "../Flag.astro";
+import Icon from "../Icon.astro";
+import SectionHeading from "./SectionHeading.astro";
+import { COUNTRIES, whatsappLink } from "../../data/home";
+import { at, tracks } from "../../lib/grid";
+
+/** Payment methods come as one line in the data; here each one is a chip on a grid that wraps by rows of three. */
+const chipsOf = (line: string) => line.split(" · ");
+
+/** Stacked on phones, three columns from lg; full class names so Tailwind can see them. */
+const PLACE = ["row-start-1 lg:col-start-1", "row-start-3 lg:col-start-3", "row-start-5 lg:col-start-5"];
+---
+
+<section id="paises" class="relative overflow-clip bg-lemon text-ink shell grid-rows-[5rem_auto_3rem_auto_2.5rem_auto_6rem] lg:grid-rows-[8rem_auto_4.5rem_auto_3rem_auto_9rem]" aria-labelledby="paises-title" data-motion data-theme="light">
+	<div class="pointer-events-none absolute inset-0 opacity-70" style="background-image:repeating-linear-gradient(135deg, rgba(5,12,23,.045) 0 2px, transparent 2px 18px);" aria-hidden="true"></div>
+
+	<div class="relative col-start-2 row-start-2">
+		<SectionHeading number="06" label="Países" ghost="Latam" id="paises-title">
+			<Fragment slot="title">Cobros y facturas <span class="hl hl--ink">de tu país</span></Fragment>
+			Cada país cobra y factura distinto. Integro las pasarelas que ya usan tus clientes y el sistema contable con el que ya trabaja tu contador.
+		</SectionHeading>
+	</div>
+
+	<ul class="relative col-start-2 row-start-4 grid grid-rows-[auto_1.25rem_auto_1.25rem_auto] lg:grid-cols-[1fr_1.25rem_1fr_1.25rem_1fr] lg:grid-rows-1">
+		{COUNTRIES.map((country, index) => {
+			const payments = chipsOf(country.payments);
+			const rows = Array.from({ length: Math.ceil(payments.length / 3) }, (_, rowIndex) => payments.slice(rowIndex * 3, rowIndex * 3 + 3));
+			return (
+				<li
+					class:list={["card-spot lift grid rounded-[28px] bg-ink text-white shadow-[0_40px_80px_-45px_rgba(5,12,23,.9)] grid-cols-[1.5rem_minmax(0,1fr)_1.5rem] grid-rows-[1.5rem_auto_1.4rem_auto_0.6rem_auto_1.25rem_auto_0.5rem_auto_1.25rem_auto_1.4rem_auto_1.5rem] lg:grid-cols-[1.75rem_minmax(0,1fr)_1.75rem] lg:grid-rows-[1.75rem_auto_1.5rem_auto_0.6rem_auto_1.25rem_auto_0.5rem_auto_1.25rem_auto_minmax(1.5rem,1fr)_auto_1.75rem]", PLACE[index], "lg:row-start-1"]}
+					style={`--d:${index * 0.1}s; --spot:rgba(242,233,109,.14)`}
+					data-reveal
+					data-spot
+				>
+					<!-- Flag and name -->
+					<p class="col-start-2 row-start-2 grid grid-cols-[auto_1rem_1fr_auto] items-center">
+						<Flag code={country.code} class="col-start-1 h-[2.6rem] w-[3.9rem]" sheen />
+						<span class="display col-start-3 text-[2.2rem] leading-none">{country.name}</span>
+						<span class="col-start-4 font-display text-[1.1rem] uppercase text-white/30">{country.code}</span>
+					</p>
+
+					<!-- Payments -->
+					<p class="eyebrow col-start-2 row-start-4 text-[0.68rem] text-lemon">Cobros</p>
+					<div class="col-start-2 row-start-6 grid" style={`grid-template-rows:${tracks(rows.length, "auto", "0.4rem")}`}>
+						{rows.map((row, rowIndex) => (
+							<ul class="grid justify-start" style={`grid-row:${at(rowIndex)}; grid-template-columns:${tracks(row.length, "auto", "0.4rem")}`}>
+								{row.map((method, methodIndex) => (
+									<li class="chip bg-white/10 text-[0.76rem] text-white" style={`grid-column:${at(methodIndex)}`}>{method}</li>
+								))}
+							</ul>
+						))}
+					</div>
+
+					<!-- Invoicing -->
+					<p class="eyebrow col-start-2 row-start-8 text-[0.68rem] text-lemon">Facturación</p>
+					<p class="col-start-2 row-start-10 text-[0.92rem] leading-relaxed text-white/80">{country.erp}</p>
+
+					<!-- What is already proven -->
+					<p class="col-start-2 row-start-12 grid grid-cols-[1.3rem_0.6rem_1fr] items-start text-[0.86rem] font-semibold text-white/90">
+						<span class="col-start-1 grid h-[1.3rem] w-[1.3rem] place-items-center rounded-full bg-mint/15 text-mint"><Icon name="check" size={12} stroke={3.2} /></span>
+						<span class="col-start-3">{country.proof}</span>
+					</p>
+
+					<a
+						class="btn btn--lemon btn--sm btn-ic col-start-2 row-start-14 justify-self-start"
+						href={whatsappLink(`Hola Joel, te escribo desde ${country.name}. Quiero conversar sobre un proyecto.`)}
+						target="_blank"
+						rel="noopener"
+					>
+						<span class="ico" style="--ico:url(/icons/whatsapp.svg); --ico-size:1rem"></span>
+						<span>Escríbeme desde {country.name}</span>
+					</a>
+				</li>
+			);
+		})}
+	</ul>
+
+	<p class="relative col-start-2 row-start-6 grid grid-cols-[2.6rem_0.85rem_minmax(0,1fr)] items-center justify-self-start text-[0.98rem] font-semibold text-ink/80" data-reveal>
+		<span class="col-start-1 grid h-[2.6rem] w-[2.6rem] place-items-center rounded-full bg-ink text-lemon"><Icon name="globe" size={20} /></span>
+		<span class="col-start-3">¿Estás en otro país? Trabajo en remoto con clientes del resto del mundo: ya cobré con Stripe y Authorize.net y desplegué en AWS.</span>
+	</p>
+</section>

@@ -1,0 +1,24 @@
+---
+import { METRICS } from "../../data/home";
+---
+
+<section class="relative bg-paper text-ink shell grid-rows-[3.25rem_auto_3.5rem] lg:grid-rows-[4.25rem_auto_4.25rem]" aria-label="Cifras" data-theme="light">
+	<dl class="col-start-2 row-start-2 grid grid-cols-[1fr_1.25rem_1fr] grid-rows-[auto_2rem_auto] lg:grid-cols-[1fr_2rem_1px_2rem_1fr_2rem_1px_2rem_1fr_2rem_1px_2rem_1fr] lg:grid-rows-1">
+		{METRICS.map((metric, index) => {
+			const mobile = ["col-start-1 row-start-1", "col-start-3 row-start-1", "col-start-1 row-start-3", "col-start-3 row-start-3"][index];
+			const desktop = ["lg:col-start-1", "lg:col-start-5", "lg:col-start-9", "lg:col-start-13"][index];
+			return (
+				<div class:list={["grid grid-rows-[auto_0.6rem_auto_0.35rem_auto] content-start lg:row-start-1", mobile, desktop]} data-reveal style={`--d:${index * 0.1}s`}>
+					<dt class="row-start-3 text-[0.95rem] font-bold leading-snug">{metric.label}</dt>
+					<dd class="row-start-1 font-display text-[3.4rem] leading-none lg:text-[4.6rem]">
+						{metric.prefix}<span data-count={metric.value}>{metric.value}</span>{metric.suffix}
+					</dd>
+					<dd class="row-start-5 text-[0.8rem] leading-snug text-ink/55">{metric.note}</dd>
+				</div>
+			);
+		})}
+		<span class="hidden bg-ink/12 lg:col-start-3 lg:row-start-1 lg:block" aria-hidden="true"></span>
+		<span class="hidden bg-ink/12 lg:col-start-7 lg:row-start-1 lg:block" aria-hidden="true"></span>
+		<span class="hidden bg-ink/12 lg:col-start-11 lg:row-start-1 lg:block" aria-hidden="true"></span>
+	</dl>
+</section>

@@ -1,0 +1,23 @@
+---
+/** The brand mark (two cut blocks) and the name, drawn in currentColor so it follows the background. */
+interface Props {
+	size?: "sm" | "lg";
+	markClass?: string;
+	class?: string;
+}
+
+const { size = "sm", markClass = "text-lemon", class: className } = Astro.props;
+const big = size === "lg";
+---
+
+<span class:list={["grid items-center", big ? "grid-cols-[auto_1.1rem_auto]" : "grid-cols-[auto_0.7rem_auto]", className]}>
+	<svg class:list={["col-start-1", markClass, big ? "h-[4.2rem] w-auto" : "h-[2.15rem] w-auto"]} viewBox="0 0 165 312" fill="currentColor" aria-hidden="true">
+		<path d="M0 0H165V75L0 156Z" />
+		<path d="M165 103V238L18 312V178Z" />
+	</svg>
+	<span class:list={["col-start-3 grid", big ? "grid-rows-[auto_auto_0.45rem_auto]" : "grid-rows-[auto_auto_0.2rem_auto]"]}>
+		<span class:list={["row-start-1 font-bold leading-none tracking-[0.04em]", big ? "text-[1.85rem]" : "text-[0.98rem]"]}>JOEL</span>
+		<span class:list={["row-start-2 font-bold leading-none tracking-[0.04em]", big ? "text-[1.85rem]" : "text-[0.98rem]"]}>SUÁREZ</span>
+		<span class:list={["row-start-4 font-semibold uppercase leading-none tracking-[0.2em] opacity-70", big ? "text-[0.7rem]" : "text-[0.5rem]"]}>Arquitecto de software</span>
+	</span>
+</span>
