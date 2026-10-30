@@ -34,6 +34,71 @@
   font-display: swap;
 }
 
+/* Fallbacks that take the brand fonts' room: a local font scaled to the same width and line box
+   (capsize formula, measured on the page's own text with fontkit). The CSS is inlined, so the first
+   paint comes before the brand fonts; with these, the swap does not move the hero (CLS was 0.4).
+   Arial and Liberation Sans share metrics; Roboto covers Android. */
+@font-face {
+  font-family: "Anton Fallback";
+  src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans");
+  size-adjust: 70.15%;
+  ascent-override: 167.67%;
+  descent-override: 46.91%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Anton Fallback Roboto";
+  src: local("Roboto"), local("Roboto-Regular");
+  size-adjust: 75.76%;
+  ascent-override: 155.27%;
+  descent-override: 43.44%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Montserrat Fallback";
+  src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans");
+  font-weight: 100 549;
+  font-style: normal;
+  size-adjust: 110.87%;
+  ascent-override: 87.31%;
+  descent-override: 22.64%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Montserrat Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold");
+  font-weight: 550 900;
+  font-style: normal;
+  size-adjust: 109.27%;
+  ascent-override: 88.59%;
+  descent-override: 22.97%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Montserrat Fallback";
+  src: local("Arial Italic"), local("Arial-ItalicMT"), local("Liberation Sans Italic"), local("LiberationSans-Italic");
+  font-weight: 400;
+  font-style: italic;
+  size-adjust: 112.3%;
+  ascent-override: 86.2%;
+  descent-override: 22.35%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Montserrat Fallback Roboto";
+  src: local("Roboto"), local("Roboto-Regular");
+  font-weight: 100 900;
+  size-adjust: 112.66%;
+  ascent-override: 85.92%;
+  descent-override: 22.28%;
+  line-gap-override: 0%;
+}
+
 @theme {
   --color-primary: #32274f;
   --color-secondary: #e0a227;
@@ -52,8 +117,8 @@
   --color-coral: #ff7a59;
   --color-sky: #7cc4ff;
 
-  --font-display: "Anton", "Arial Narrow", "Impact", sans-serif;
-  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Anton", "Anton Fallback", "Anton Fallback Roboto", "Arial Narrow", "Impact", sans-serif;
+  --font-sans: "Montserrat", "Montserrat Fallback", "Montserrat Fallback Roboto", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
