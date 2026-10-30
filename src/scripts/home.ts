@@ -45,6 +45,35 @@ function queueFrame(): void {
 window.addEventListener("scroll", queueFrame, { passive: true });
 window.addEventListener("resize", queueFrame, { passive: true });
 
+/**
+ * The elements near the screen, kept up to date by an observer. Scroll work measures only
+ * these: measuring inside a section the browser is still skipping (.defer) would force it
+ * to lay that section out, and undo the saving.
+ */
+function nearScreen(elements: HTMLElement[], margin = "300px 0px"): Set<HTMLElement> {
+	const near = new Set<HTMLElement>();
+	if (!("IntersectionObserver" in window)) {
+		elements.forEach((element) => near.add(element));
+		return near;
+	}
+	const observer = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				const element = entry.target as HTMLElement;
+				if (entry.isIntersecting) {
+					near.add(element);
+				} else {
+					near.delete(element);
+				}
+			}
+			queueFrame();
+		},
+		{ rootMargin: margin },
+	);
+	elements.forEach((element) => observer.observe(element));
+	return near;
+}
+
 /* ---------- Reveal on scroll and motion only on screen ---------- */
 
 function initReveal(): void {
@@ -426,7 +455,7 @@ function initGhosts(): void {
 	if (reduceMotion) {
 		return;
 	}
-	const ghosts = $$("[data-ghost]");
+	const ghosts = nearScreen($$("[data-ghost]"));
 	onFrame(() => {
 		const viewport = window.innerHeight;
 		for (const ghost of ghosts) {
@@ -456,12 +485,15 @@ function initCaseStack(): void {
 		});
 		queueFrame();
 	};
-	placeTops();
 	window.addEventListener("resize", placeTops, { passive: true });
 	if ("ResizeObserver" in window) {
+		// The observer also reports each card's first size, once the browser draws the section.
 		const observer = new ResizeObserver(placeTops);
 		cards.forEach((card) => observer.observe(card));
+	} else {
+		placeTops();
 	}
+	const near = nearScreen([cards[0].closest("section") ?? cards[0]]);
 
 	onFrame(() => {
 		if (!desktop.matches) {
@@ -469,6 +501,9 @@ function initCaseStack(): void {
 				card.style.removeProperty("--scale");
 				card.style.removeProperty("--dim");
 			});
+			return;
+		}
+		if (near.size === 0) {
 			return;
 		}
 		const viewport = window.innerHeight;
@@ -486,7 +521,7 @@ function initCaseStack(): void {
 }
 
 function initRails(): void {
-	const rails = $$("[data-process]");
+	const rails = nearScreen($$("[data-process]"));
 	onFrame(() => {
 		const viewport = window.innerHeight;
 		const line = viewport * 0.58;
@@ -558,10 +593,12 @@ function initSlides(): void {
 function initShots(): void {
 	const shots = $$("[data-shot]");
 	const update = (): void => shots.forEach((shot) => shot.style.setProperty("--viewport-h", `${shot.clientHeight}px`));
-	update();
 	if ("ResizeObserver" in window) {
+		// The first report arrives when the browser draws the shot, without forcing it earlier.
 		const observer = new ResizeObserver(update);
 		shots.forEach((shot) => observer.observe(shot));
+	} else {
+		update();
 	}
 }
 

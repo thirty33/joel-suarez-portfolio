@@ -13,7 +13,7 @@ const FALLBACK: Record<string, "database" | "dashboard"> = { mysql: "database", 
 const GROUP_ICONS = ["terminal", "dashboard", "sparkle", "cloud", "card", "shield"] as const;
 ---
 
-<section id="stack" class="relative overflow-hidden bg-ink text-white shell grid-rows-[5rem_auto_3rem_auto_3rem_auto_6rem] lg:grid-rows-[8rem_auto_4rem_auto_4rem_auto_9rem]" aria-labelledby="stack-title" data-motion data-theme="dark">
+<section id="stack" class="defer relative overflow-hidden bg-ink text-white shell grid-rows-[5rem_auto_3rem_auto_3rem_auto_6rem] lg:grid-rows-[8rem_auto_4rem_auto_4rem_auto_9rem]" aria-labelledby="stack-title" data-motion data-theme="dark" style="--defer-h:1910px; --defer-h-lg:1150px">
 	<div class="hero__glow -left-[16rem] bottom-[-10rem] h-[38rem] w-[38rem]" aria-hidden="true"></div>
 	<div class="col-start-2 row-start-2">
 		<SectionHeading number="04" label="Stack" ghost="Stack" id="stack-title" tone="dark">

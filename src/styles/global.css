@@ -11,7 +11,7 @@
 
 @font-face {
   font-family: "Anton";
-  src: url("/fonts/anton-latin.woff") format("woff");
+  src: url("/fonts/anton-latin.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -19,7 +19,7 @@
 
 @font-face {
   font-family: "Montserrat";
-  src: url("/fonts/montserrat-latin.woff") format("woff");
+  src: url("/fonts/montserrat-latin.woff2") format("woff2");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -27,8 +27,9 @@
 
 @font-face {
   font-family: "Montserrat";
-  src: url("/fonts/montserrat-italic-latin.woff") format("woff");
-  font-weight: 100 900;
+  /* Only the testimonials are italic, at the regular weight: a static cut weighs a third */
+  src: url("/fonts/montserrat-italic-400-latin.woff2") format("woff2");
+  font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
@@ -628,12 +629,34 @@
 
   /* ---------- Tape (two crossing bands) ---------- */
 
-  /* Wider than the screen and centred, so a band never shows its ends once it is tilted */
+  /* Wider than the screen and centred, so a band never shows its ends once it is tilted.
+     The marquee makes the band its own layer, and Chrome on Android draws the edge of a
+     tilted layer as steps; a transparent border keeps the coloured edge inside the layer,
+     where it is smoothed like any other pixel. */
   .tape {
     width: 112%;
     translate: -5.36% 0;
     rotate: var(--tape-rotate, -2.2deg);
+    border-block: 2px solid transparent;
+    background-clip: padding-box;
+    outline: 1px solid transparent;
     box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.8);
+  }
+
+  /* ---------- Sections below the first screen ---------- */
+
+  /* The browser skips their style, layout and paint until they come near the screen, so the
+     first paint only works out the hero. The height is a first guess per section (phone and
+     desktop) that keeps the scrollbar honest; once a section is drawn, its real height stays. */
+  .defer {
+    content-visibility: auto;
+    contain-intrinsic-block-size: auto var(--defer-h, 1500px);
+  }
+
+  @media (min-width: 64rem) {
+    .defer {
+      contain-intrinsic-block-size: auto var(--defer-h-lg, 1200px);
+    }
   }
 
   /* ---------- The film (how a system works, in five scenes) ---------- */

@@ -137,8 +137,9 @@ jobs:
 
       # Cache-Control como metadato de cada archivo (el plan Free no admite políticas
       # de cabeceras personalizadas). Primero los assets con hash y las fuentes,
-      # inmutables a 1 año; después el resto (HTML, imágenes, íconos) con
-      # revalidación corta, para que cada deploy se vea en minutos.
+      # inmutables a 1 año; después el resto (HTML, imágenes, íconos): el navegador
+      # revalida a los 5 minutos y CloudFront lo guarda hasta el próximo deploy
+      # (s-maxage), que lo invalida al final. Así casi nunca vuelve a pedirlo a S3.
       - name: Deploy to S3
         run: |
           aws s3 sync dist/_astro s3://${{ env.BUCKET_NAME }}/_astro --delete \
@@ -147,7 +148,7 @@ jobs:
             --cache-control "public, max-age=31536000, immutable"
           aws s3 sync dist/ s3://${{ env.BUCKET_NAME }} --delete \
             --exclude "_astro/*" --exclude "fonts/*" \
-            --cache-control "public, max-age=300, must-revalidate"
+            --cache-control "public, max-age=300, s-maxage=31536000, must-revalidate"
 
       # El ID de la distribución se lee de los outputs del stack y se enmascara; de la
       # respuesta solo se imprime el estado de la invalidación.

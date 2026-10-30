@@ -9,16 +9,9 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/react": "^5.0.2",
-    "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^5.17.1",
-    "notistack": "^3.0.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-hook-form": "^7.72.0",
-    "tailwindcss": "^4.2.2",
-    "yup": "^1.7.1"
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
     "prettier": "^3.8.1",
