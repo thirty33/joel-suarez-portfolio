@@ -43,9 +43,9 @@ export const TAPE_ITEMS = [
 
 export const METRICS = [
 	{ value: 9, prefix: "", suffix: "+", label: "años construyendo software", note: "Desde 2017, siempre en sistemas en producción" },
-	{ value: 28, prefix: "", suffix: "", label: "empresas convertidas desde WhatsApp", note: "Leads de Google Ads, Meta y la web que terminaron como clientes (Delicius, 2026)" },
-	{ value: 10, prefix: "", suffix: "+", label: "integraciones ya construidas", note: "Pagos: Klap, Stripe, Authorize.net y Binance · IA: DeepSeek, MiniMax, OpenAI y Anthropic · WhatsApp y Defontana" },
-	{ value: 4, prefix: "", suffix: "", label: "países con proyectos entregados", note: "Chile, Colombia, EE. UU. y Francia, y abierto al resto del mundo" },
+	{ value: 30, prefix: "+", currency: "US$", unit: "mil", suffix: "", label: "al mes en ventas de empresas que llegaron por WhatsApp y la web", note: "Leads de Google Ads, Meta y la web convertidos en clientes (Delicius, 2026)" },
+	{ value: 10, prefix: "", suffix: "+", label: "integraciones llevadas a producción", note: "Klap, WhatsApp, IA (DeepSeek, MiniMax, OpenAI y Claude de Anthropic), Meta, Google y AWS; antes Stripe, Authorize.net, Binance, Twilio y SendGrid" },
+	{ value: 1.5, decimals: 1, prefix: "+", currency: "US$", unit: "M", suffix: "", label: "vendidos en el primer año a través del sistema que diseñé", note: "Delicius Food, Chile: backoffice, tienda B2B y tienda B2C" },
 ];
 
 export const FILM_STEPS = [
@@ -97,11 +97,11 @@ export const MAIN_CASES: MainCase[] = [
 			{ title: "Observabilidad", text: "Salud del sistema en vivo: invocaciones de IA, colas, integraciones y envíos de WhatsApp." },
 		],
 		stats: [
-			{ value: "3.300+", label: "conversaciones de WhatsApp" },
-			{ value: "28", label: "empresas convertidas desde el chat" },
+			{ value: "+20.000", label: "pedidos procesados" },
+			{ value: "1 de cada 4", label: "pesos vendidos en octubre vino de empresas captadas por WhatsApp y la web" },
 			{ value: "250+", label: "clases de test" },
 		],
-		stack: "Laravel 12 · Filament · React · DDD · DeepSeek y MiniMax · AWS",
+		stack: "Laravel 12 · Filament · React · DDD · DeepSeek, MiniMax y Claude (Anthropic) · AWS",
 		shots: [
 			{ src: "/images/cases/delicius-bo-conversaciones.webp", small: "/images/cases/delicius-bo-conversaciones-960.webp", label: "Conversaciones", url: "backoffice.pedidosdelicius.cl/conversations", alt: "Bandeja de conversaciones de WhatsApp con el tipo, la atención, la etapa y las etiquetas de origen que pone la IA (datos de clientes difuminados)" },
 			{ src: "/images/cases/delicius-bo-salud.webp", small: "/images/cases/delicius-bo-salud-960.webp", label: "Salud del sistema", url: "backoffice.pedidosdelicius.cl/salud-del-sistema", alt: "Panel de salud del sistema con invocaciones de IA, colas, integraciones y envíos de WhatsApp de las últimas 24 horas" },

@@ -11,7 +11,7 @@ import { METRICS } from "../../data/home";
 				<div class:list={["grid grid-rows-[auto_0.6rem_auto_0.35rem_auto] content-start lg:row-start-1", mobile, desktop]} data-reveal style={`--d:${index * 0.1}s`}>
 					<dt class="row-start-3 text-[0.95rem] font-bold leading-snug">{metric.label}</dt>
 					<dd class="row-start-1 font-display text-[3.4rem] leading-none lg:text-[4.6rem]">
-						{metric.prefix}<span data-count={metric.value}>{metric.value}</span>{metric.suffix}
+						{metric.prefix}{metric.currency && <span class="text-[0.55em]">{metric.currency}</span>}<span data-count={metric.value} data-decimals={metric.decimals}>{metric.value.toFixed(metric.decimals ?? 0).replace(".", ",")}</span>{metric.unit && <span class="text-[0.55em]">&nbsp;{metric.unit}</span>}{metric.suffix}
 					</dd>
 					<dd class="row-start-5 text-[0.8rem] leading-snug text-ink/55">{metric.note}</dd>
 				</div>

@@ -85,7 +85,7 @@ const SIDE_PLACE = [
 							{item.stats && (
 								<dl class="row-start-1 grid grid-cols-[auto_1.5rem_auto_1.5rem_auto] justify-start">
 									{item.stats.map((stat, statIndex) => (
-										<div class="grid grid-rows-[auto_0.25rem_auto]" style={`grid-column:${at(statIndex)}`}>
+										<div class="grid content-start grid-rows-[auto_0.25rem_auto]" style={`grid-column:${at(statIndex)}`}>
 											<dd class:list={["row-start-1 font-display text-[1.7rem] leading-none", theme.accent]}>{stat.value}</dd>
 											<dt class:list={["row-start-3 max-w-[8rem] text-[0.7rem] font-semibold leading-snug", theme.muted]}>{stat.label}</dt>
 										</div>

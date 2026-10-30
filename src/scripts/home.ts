@@ -264,11 +264,12 @@ function initCounters(): void {
 	}
 	const run = (element: HTMLElement): void => {
 		const target = Number(element.dataset.count);
+		const decimals = Number(element.dataset.decimals ?? 0);
 		const duration = 1700;
 		const start = performance.now();
 		const tick = (now: number): void => {
 			const progress = clamp((now - start) / duration);
-			element.textContent = String(Math.round(target * (1 - Math.pow(1 - progress, 3))));
+			element.textContent = (target * (1 - Math.pow(1 - progress, 3))).toFixed(decimals).replace(".", ",");
 			if (progress < 1) {
 				requestAnimationFrame(tick);
 			}
