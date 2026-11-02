@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://joelsuarez.dev',
   server: { host: true },
   devToolbar: { enabled: false },
   // A one-page site: its CSS goes inside the HTML, so the first paint waits for no other request.
