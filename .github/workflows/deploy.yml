@@ -14,6 +14,13 @@ concurrency:
   group: deploy-prod
   cancel-in-progress: false
 
+# Credenciales por OIDC, sin llaves fijas: cada job que habla con AWS pide un token
+# a GitHub (id-token: write) y lo canjea por credenciales de 1 hora del rol que
+# crea infrastructure/github-deploy-role.yml. El ARN del rol está en el secret
+# AWS_DEPLOY_ROLE_ARN para que el número de cuenta no aparezca en el repo.
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '20'
   STACK_NAME: 'joel-portfolio-prod'
@@ -23,13 +30,17 @@ env:
   # Bucket y dominio fijos aquí, no en secrets: no son secretos y así el workflow
   # no puede apuntar por accidente a otro sitio. El repo es público: aquí no va
   # ningún ID de cuenta, zona ni distribución; se buscan en AWS y se enmascaran.
-  BUCKET_NAME: 'joel-portfolio-site'
+  # Si cambia, cambiar también SiteBucketName de la pila del rol (github-deploy-role.yml).
+  BUCKET_NAME: 'joelsuarez-dev-site'
   DOMAIN_NAME: 'joelsuarez.dev'
 
 jobs:
   infrastructure:
     name: Update Infrastructure
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,8 +49,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: portfolio-infrastructure
           aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: true
 
@@ -55,8 +66,8 @@ jobs:
             aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }}
           fi
 
-      # La zona hospedada la crea el registro del dominio en Route 53: se busca por
-      # nombre (no se escribe su ID en el repo) y se enmascara en el log.
+      # La zona hospedada se crea a mano en la cuenta (no es parte de ninguna pila):
+      # se busca por nombre (no se escribe su ID en el repo) y se enmascara en el log.
       # `deploy` crea el stack la primera vez y lo actualiza después. Sin cambios no
       # hace nada (--no-fail-on-empty-changeset); si algo falla, el job queda rojo.
       - name: Create or update stack
@@ -66,7 +77,7 @@ jobs:
             --query "HostedZones[?Name=='${{ env.DOMAIN_NAME }}.'].Id | [0]" --output text)
           ZONE_ID="${ZONE_ID#/hostedzone/}"
           if [ -z "$ZONE_ID" ] || [ "$ZONE_ID" = "None" ]; then
-            echo "::error::No existe la zona hospedada de ${{ env.DOMAIN_NAME }} en Route 53. ¿Falta registrar el dominio?"
+            echo "::error::No existe la zona hospedada de ${{ env.DOMAIN_NAME }} en Route 53. ¿Falta crear la zona en esta cuenta?"
             exit 1
           fi
           echo "::add-mask::$ZONE_ID"
@@ -120,6 +131,9 @@ jobs:
     name: Deploy to S3
     needs: [infrastructure, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
@@ -130,8 +144,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: portfolio-deploy
           aws-region: ${{ env.AWS_REGION }}
           mask-aws-account-id: true
 

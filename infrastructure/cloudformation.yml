@@ -17,10 +17,12 @@ Description: >
 #    CloudFormation lo toma como borrar el recurso viejo y crear uno nuevo.
 # 3. Cambiar un nombre explícito (bucket, OAC, función, WAF) o el dominio del
 #    certificado fuerza un REEMPLAZO del recurso.
-# 4. La zona hospedada NO es parte del stack: la crea el registro del dominio
-#    en Route 53 y entra como parámetro. Borrar el stack no toca el dominio.
+# 4. La zona hospedada NO es parte del stack: se crea a mano en la cuenta y
+#    entra como parámetro. Borrar el stack no toca la zona ni el dominio.
 # 5. El plan de tarifa plana no se puede cambiar de tier con un update: se
 #    cambia desde la consola de CloudFront o con la API de PricingPlanManager.
+# 6. Los permisos del workflow viven en github-deploy-role.yml (otra pila, que
+#    se despliega a mano). Un recurso nuevo aquí puede pedir permisos nuevos allá.
 # ==============================================================================
 
 # ==============================================================================
@@ -37,7 +39,7 @@ Parameters:
 
   HostedZoneId:
     Type: AWS::Route53::HostedZone::Id
-    Description: ID de la zona hospedada del dominio (la creó el registro en Route 53)
+    Description: ID de la zona hospedada del dominio (creada a mano en la cuenta)
 
   RateLimitPerIp:
     Type: Number

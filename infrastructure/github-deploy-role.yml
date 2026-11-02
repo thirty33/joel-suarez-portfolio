@@ -1,0 +1,244 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Acceso de GitHub Actions a esta cuenta para desplegar joel-suarez-portfolio:
+  proveedor OIDC de GitHub y un rol con los permisos justos de la pila del sitio.
+  Sin llaves fijas: cada corrida recibe credenciales temporales de 1 hora.
+
+# ==============================================================================
+# CÓMO SE DESPLIEGA (leer antes de editar)
+#
+# 1. Esta pila NO la despliega el workflow. Se despliega a mano, con un perfil
+#    administrador de la cuenta, la primera vez y cada vez que cambien los
+#    permisos:
+#      ZONE_ID=$(aws route53 list-hosted-zones-by-name --dns-name joelsuarez.dev \
+#        --query "HostedZones[?Name=='joelsuarez.dev.'].Id | [0]" --output text)
+#      aws cloudformation deploy --region us-east-1 \
+#        --stack-name joel-portfolio-deployer \
+#        --template-file infrastructure/github-deploy-role.yml \
+#        --capabilities CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset \
+#        --parameter-overrides SiteBucketName=<bucket> HostedZoneId="${ZONE_ID#/hostedzone/}"
+#    Así el rol del workflow no tiene permisos de IAM y no puede ampliarse.
+# 2. El ARN del rol (output RoleArn) va en el secret AWS_DEPLOY_ROLE_ARN del
+#    repo, para que el número de cuenta no aparezca en el repo público.
+# 3. SiteBucketName tiene que ser el BUCKET_NAME de .github/workflows/deploy.yml.
+#    Si se cambia allá, se cambia aquí y se vuelve a desplegar ANTES del push.
+# 4. El proveedor OIDC es uno por cuenta. Si otro repo despliega en esta
+#    cuenta, reutiliza este (output OIDCProviderArn) en vez de crear otro.
+# 5. Si un despliegue falla con AccessDenied, el error dice qué acción falta:
+#    se agrega aquí esa acción, no un permiso amplio.
+# 6. Sin pricingplanmanager:ApprovePaidSubscription a propósito: el workflow
+#    puede crear y cancelar el plan Free, pero no activar un plan de pago.
+# ==============================================================================
+
+Parameters:
+  GitHubRepository:
+    Type: String
+    Default: thirty33/joel-suarez-portfolio
+    Description: Repo (dueño/nombre) cuyo workflow puede asumir el rol
+
+  DeployBranch:
+    Type: String
+    Default: master
+    Description: Única rama desde la que se puede asumir el rol
+
+  SiteStackName:
+    Type: String
+    Default: joel-portfolio-prod
+    Description: Pila del sitio que el rol puede crear, actualizar y borrar
+
+  SiteBucketName:
+    Type: String
+    Description: Bucket del sitio (el BUCKET_NAME del workflow)
+
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Zona del dominio, la única donde el rol puede cambiar registros
+
+Resources:
+
+  # ----------------------------------------------------------------------------
+  # PROVEEDOR OIDC - La cuenta confía en los tokens que firma GitHub Actions
+  # ----------------------------------------------------------------------------
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      Tags:
+        - Key: Project
+          Value: joel-suarez-portfolio
+
+  # ----------------------------------------------------------------------------
+  # ROL - Solo lo asume el workflow de GitHubRepository corriendo en DeployBranch
+  # (push o ejecución manual). Un fork, otra rama o un pull request reciben un
+  # token con otro `sub` y STS lo rechaza.
+  # ----------------------------------------------------------------------------
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: joel-portfolio-deployer
+      Description: GitHub Actions deploys joel-suarez-portfolio (OIDC, no long-lived keys)
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubRepository}:ref:refs/heads/${DeployBranch}'
+      Tags:
+        - Key: Project
+          Value: joel-suarez-portfolio
+
+  # ----------------------------------------------------------------------------
+  # PERMISOS - Lo que piden los recursos de infrastructure/cloudformation.yml
+  # (sacado de los handlers de cada tipo en el registro de CloudFormation) más
+  # el sync a S3 y la invalidación del workflow. Ningún permiso de IAM.
+  # ----------------------------------------------------------------------------
+  DeployPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: joel-portfolio-deployer
+      Description: Least privilege to deploy the joel-suarez-portfolio stack and site files
+      Roles:
+        - !Ref DeployRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # La pila del sitio: crearla, actualizarla por change set y borrarla si
+          # quedó en ROLLBACK_COMPLETE.
+          - Sid: SiteStack
+            Effect: Allow
+            Action:
+              - cloudformation:CreateChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:ListChangeSets
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:GetTemplateSummary
+              - cloudformation:DeleteStack
+            Resource: !Sub 'arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${SiteStackName}/*'
+
+          # El bucket del sitio y sus archivos, ningún otro bucket.
+          - Sid: SiteBucket
+            Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:::${SiteBucketName}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${SiteBucketName}/*'
+
+          # Distribución, OAC, función de redirección e invalidaciones.
+          - Sid: CloudFront
+            Effect: Allow
+            Action:
+              - cloudfront:CreateDistribution
+              - cloudfront:GetDistribution
+              - cloudfront:GetDistributionConfig
+              - cloudfront:UpdateDistribution
+              - cloudfront:UpdateDistributionWithStagingConfig
+              - cloudfront:DeleteDistribution
+              - cloudfront:CreateConnectionGroup
+              - cloudfront:GetConnectionGroup
+              - cloudfront:GetVpcOrigin
+              - cloudfront:CreateOriginAccessControl
+              - cloudfront:GetOriginAccessControl
+              - cloudfront:UpdateOriginAccessControl
+              - cloudfront:DeleteOriginAccessControl
+              - cloudfront:CreateFunction
+              - cloudfront:DescribeFunction
+              - cloudfront:GetFunction
+              - cloudfront:UpdateFunction
+              - cloudfront:PublishFunction
+              - cloudfront:DeleteFunction
+              - cloudfront:CreateInvalidation
+              - cloudfront:GetInvalidation
+              - cloudfront:TagResource
+              - cloudfront:UntagResource
+              - cloudfront:ListTagsForResource
+            Resource: !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:*'
+
+          # RequestCertificate no admite permisos por recurso.
+          - Sid: CertificateRequest
+            Effect: Allow
+            Action: acm:RequestCertificate
+            Resource: '*'
+
+          - Sid: Certificate
+            Effect: Allow
+            Action:
+              - acm:DescribeCertificate
+              - acm:DeleteCertificate
+              - acm:UpdateCertificateOptions
+              - acm:AddTagsToCertificate
+              - acm:RemoveTagsFromCertificate
+              - acm:ListTagsForCertificate
+            Resource: !Sub 'arn:${AWS::Partition}:acm:${AWS::Region}:${AWS::AccountId}:certificate/*'
+
+          # WAF de alcance CLOUDFRONT (ARN "global", siempre en us-east-1).
+          - Sid: WebACL
+            Effect: Allow
+            Action:
+              - wafv2:CreateWebACL
+              - wafv2:GetWebACL
+              - wafv2:UpdateWebACL
+              - wafv2:DeleteWebACL
+              - wafv2:TagResource
+              - wafv2:UntagResource
+              - wafv2:ListTagsForResource
+            Resource: !Sub 'arn:${AWS::Partition}:wafv2:us-east-1:${AWS::AccountId}:global/*'
+
+          # Buscar la zona por nombre (el workflow no guarda su ID).
+          - Sid: HostedZoneLookup
+            Effect: Allow
+            Action:
+              - route53:ListHostedZones
+              - route53:ListHostedZonesByName
+            Resource: '*'
+
+          # Registros alias y validación del certificado, solo en la zona del dominio.
+          - Sid: HostedZoneRecords
+            Effect: Allow
+            Action:
+              - route53:GetHostedZone
+              - route53:ListResourceRecordSets
+              - route53:ChangeResourceRecordSets
+            Resource: !Sub 'arn:${AWS::Partition}:route53:::hostedzone/${HostedZoneId}'
+
+          - Sid: HostedZoneChanges
+            Effect: Allow
+            Action: route53:GetChange
+            Resource: !Sub 'arn:${AWS::Partition}:route53:::change/*'
+
+          # Plan Free de tarifa plana, más las lecturas que pide su handler. No
+          # admiten permisos por recurso. Sin ApprovePaidSubscription (ver punto 6
+          # del encabezado).
+          - Sid: FlatRatePlan
+            Effect: Allow
+            Action:
+              - pricingplanmanager:CreateSubscription
+              - pricingplanmanager:GetSubscription
+              - pricingplanmanager:ListSubscriptions
+              - pricingplanmanager:UpdateSubscription
+              - pricingplanmanager:CancelSubscription
+              - pricingplanmanager:CancelSubscriptionChange
+              - pricingplanmanager:AssociateResourcesToSubscription
+              - pricingplanmanager:DisassociateResourcesFromSubscription
+              - cloudwatch:GetMetricData
+              - shield:ListProtections
+            Resource: '*'
+
+Outputs:
+  RoleArn:
+    Description: ARN del rol; va en el secret AWS_DEPLOY_ROLE_ARN del repo
+    Value: !GetAtt DeployRole.Arn
+
+  OIDCProviderArn:
+    Description: Proveedor OIDC de GitHub de la cuenta (reutilizable por otros repos)
+    Value: !Ref GitHubOIDCProvider
